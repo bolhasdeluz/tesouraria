@@ -59,6 +59,164 @@
     letter-spacing: .03em;
   }
   .header-flame { font-size: 1.4rem; animation: flicker .9s ease-in-out infinite alternate; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+
+  /* EXPORT MENU */
+  .export-btn {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.28);
+    border-radius: 20px;
+    color: rgba(255,255,255,.9);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .75rem;
+    padding: 5px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background .18s;
+    white-space: nowrap;
+  }
+  .export-btn:hover { background: rgba(255,255,255,.25); }
+
+  .export-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(196,57,107,.18);
+    overflow: hidden;
+    z-index: 200;
+    min-width: 190px;
+    margin-top: 6px;
+    animation: fadeIn .2s ease both;
+    display: none;
+  }
+  .export-dropdown.open { display: block; }
+  .export-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+    text-decoration: none;
+  }
+  .export-item:last-child { border-bottom: none; }
+  .export-item:hover { background: var(--gold-dim); }
+  .export-item-icon { font-size: 1.1rem; }
+  .export-item-text { flex: 1; }
+  .export-item-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .export-item-desc {
+    font-family: 'DM Sans', sans-serif;
+    font-size: .68rem;
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+
+  /* WHATSAPP MODAL */
+  .wpp-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(40,10,20,.55);
+    backdrop-filter: blur(4px);
+    z-index: 300;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+  .wpp-overlay.open { display: flex; }
+  .wpp-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--gold);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 40px rgba(196,57,107,.15);
+    width: 100%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp .3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .wpp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .wpp-title {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .wpp-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--text-dim);
+    padding: 2px 6px;
+  }
+  .wpp-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+  .wpp-preview {
+    background: #e8f5e9;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .85rem;
+    line-height: 1.6;
+    color: #1a3a1a;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border: 1px solid #c8e6c9;
+    margin-bottom: 14px;
+  }
+  .wpp-copy-btn {
+    background: #25d366;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .08em;
+    font-weight: 700;
+    padding: 13px 24px;
+    cursor: pointer;
+    width: 100%;
+    text-transform: uppercase;
+    transition: background .2s;
+  }
+  .wpp-copy-btn:hover { background: #1fba58; }
+
+  /* PRINT STYLES */
+  @media print {
+    .header, .nav, .filter-bar, .nav-btn, .export-btn, .export-dropdown,
+    .btn-primary, .form-card, .wpp-overlay, .toast { display: none !important; }
+    .panel { display: block !important; }
+    body { background: #fff; }
+    .content { padding: 0; }
+    .saldo-card { background: #f5f5f5 !important; color: #000 !important; print-color-adjust: exact; }
+  }
 
   @keyframes flicker {
     0% { opacity: .8; transform: scale(1); }
@@ -523,13 +681,57 @@
 </head>
 <body>
 
-<header class="header">
+<header class="header" style="position:sticky;top:0;z-index:150;">
   <div>
     <div class="header-title">Tesouraria</div>
     <div class="header-subtitle">Bolhas de Luz</div>
   </div>
-  <div class="header-flame">🕯️</div>
+  <div class="header-right">
+    <button class="export-btn" onclick="toggleExportMenu(event)">
+      <span>↑</span> Exportar
+    </button>
+    <div class="header-flame">🕯️</div>
+  </div>
 </header>
+
+<!-- EXPORT DROPDOWN -->
+<div class="export-dropdown" id="export-dropdown">
+  <div class="export-item" onclick="exportPrint()">
+    <span class="export-item-icon">🖨️</span>
+    <div class="export-item-text">
+      <div class="export-item-label">PDF / Imprimir</div>
+      <div class="export-item-desc">Salvar como PDF ou imprimir</div>
+    </div>
+  </div>
+  <div class="export-item" onclick="exportCSV()">
+    <span class="export-item-icon">📊</span>
+    <div class="export-item-text">
+      <div class="export-item-label">Excel / CSV</div>
+      <div class="export-item-desc">Baixar tabela completa</div>
+    </div>
+  </div>
+  <div class="export-item" onclick="exportWhatsApp()">
+    <span class="export-item-icon">💬</span>
+    <div class="export-item-text">
+      <div class="export-item-label">WhatsApp</div>
+      <div class="export-item-desc">Resumo formatado para copiar</div>
+    </div>
+  </div>
+</div>
+
+<!-- WHATSAPP MODAL -->
+<div class="wpp-overlay" id="wpp-overlay" onclick="fecharWpp(event)">
+  <div class="wpp-modal">
+    <div class="wpp-header">
+      <div class="wpp-title">💬 Resumo para WhatsApp</div>
+      <button class="wpp-close" onclick="fecharWppBtn()">✕</button>
+    </div>
+    <div class="wpp-body">
+      <div class="wpp-preview" id="wpp-preview"></div>
+      <button class="wpp-copy-btn" id="wpp-copy-btn" onclick="copiarWpp()">Copiar Mensagem</button>
+    </div>
+  </div>
+</div>
 
 <nav class="nav">
   <button class="nav-btn active" onclick="showPanel('painel-inicio', this)">Início</button>
@@ -883,6 +1085,148 @@
       });
     }
   }
+
+  // ── EXPORT FUNCTIONS ──────────────────────────────────────
+
+  function toggleExportMenu(e) {
+    e.stopPropagation();
+    const dd = document.getElementById('export-dropdown');
+    dd.classList.toggle('open');
+  }
+
+  document.addEventListener('click', () => {
+    document.getElementById('export-dropdown').classList.remove('open');
+  });
+
+  // 1. PDF / Print
+  function exportPrint() {
+    document.getElementById('export-dropdown').classList.remove('open');
+    window.print();
+  }
+
+  // 2. CSV / Excel
+  function exportCSV() {
+    document.getElementById('export-dropdown').classList.remove('open');
+
+    const MEMBROS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
+    const pagamentos = {};
+    MEMBROS.forEach(m => pagamentos[m] = 0);
+    lancamentos.filter(l => l.tipo === 'entrada').forEach(l => {
+      if (pagamentos[l.membro] !== undefined) pagamentos[l.membro] += l.valor;
+      else pagamentos[l.membro] = l.valor;
+    });
+
+    const totalE = lancamentos.filter(l => l.tipo === 'entrada').reduce((a, l) => a + l.valor, 0);
+    const totalG = lancamentos.filter(l => l.tipo === 'gasto').reduce((a, l) => a + l.valor, 0);
+    const saldo = totalE - totalG;
+
+    let csv = '';
+    csv += 'ENTRADAS POR MEMBRO\n';
+    csv += 'Membro,Total Pago (R$)\n';
+    Object.entries(pagamentos).sort((a,b) => b[1]-a[1]).forEach(([m, v]) => {
+      csv += `"${m}","${v.toFixed(2).replace('.',',')}"\n`;
+    });
+    csv += '\nGASTOS\n';
+    csv += 'Data,Conta,Valor (R$),Observação,Comprovante\n';
+    lancamentos.filter(l => l.tipo === 'gasto').forEach(l => {
+      csv += `"${fmtData(l.data)}","${l.conta}","${l.valor.toFixed(2).replace('.',',')}","${l.obs||''}","${l.comprovante||''}"\n`;
+    });
+    csv += '\nTODAS AS ENTRADAS\n';
+    csv += 'Data,Membro,Valor (R$),Observação\n';
+    lancamentos.filter(l => l.tipo === 'entrada').forEach(l => {
+      csv += `"${fmtData(l.data)}","${l.membro}","${l.valor.toFixed(2).replace('.',',')}","${l.obs||''}"\n`;
+    });
+    csv += '\nSALDO\n';
+    csv += 'Total Entradas (R$),Total Gastos (R$),Saldo (R$)\n';
+    csv += `"${totalE.toFixed(2).replace('.',',')}","${totalG.toFixed(2).replace('.',',')}","${saldo.toFixed(2).replace('.',',')}"\n`;
+
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const mes = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    a.href = url;
+    a.download = `tesouraria-bolhasdeluz-${mes}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV baixado ✓');
+  }
+
+  // 3. WhatsApp
+  function exportWhatsApp() {
+    document.getElementById('export-dropdown').classList.remove('open');
+
+    const MEMBROS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
+    const totalE = lancamentos.filter(l => l.tipo === 'entrada').reduce((a, l) => a + l.valor, 0);
+    const totalG = lancamentos.filter(l => l.tipo === 'gasto').reduce((a, l) => a + l.valor, 0);
+    const saldo = totalE - totalG;
+
+    const pagamentos = {};
+    MEMBROS.forEach(m => pagamentos[m] = 0);
+    lancamentos.filter(l => l.tipo === 'entrada').forEach(l => {
+      if (pagamentos[l.membro] !== undefined) pagamentos[l.membro] += l.valor;
+    });
+
+    const contas = {};
+    lancamentos.filter(l => l.tipo === 'gasto').forEach(l => {
+      contas[l.conta] = (contas[l.conta] || 0) + l.valor;
+    });
+
+    const dataHoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    let msg = '';
+    msg += `🕯️ *TESOURARIA — BOLHAS DE LUZ*\n`;
+    msg += `📅 ${dataHoje}\n`;
+    msg += `${'─'.repeat(28)}\n\n`;
+    msg += `💚 *ENTRADAS POR MEMBRO*\n`;
+    MEMBROS.forEach(m => {
+      const v = pagamentos[m] || 0;
+      const emoji = v > 0 ? '✅' : '❌';
+      const valStr = v > 0 ? ` — R$ ${v.toLocaleString('pt-BR',{minimumFractionDigits:2})}` : '';
+      msg += `${emoji} ${m}${valStr}\n`;
+    });
+    if (Object.keys(contas).length) {
+      msg += `\n🧾 *GASTOS*\n`;
+      Object.entries(contas).sort((a,b) => b[1]-a[1]).forEach(([c, v]) => {
+        msg += `• ${c}: R$ ${v.toLocaleString('pt-BR',{minimumFractionDigits:2})}\n`;
+      });
+    }
+    msg += `\n${'─'.repeat(28)}\n`;
+    msg += `📥 Total entradas: *R$ ${totalE.toLocaleString('pt-BR',{minimumFractionDigits:2})}*\n`;
+    msg += `📤 Total gastos: *R$ ${totalG.toLocaleString('pt-BR',{minimumFractionDigits:2})}*\n`;
+    msg += `💰 Saldo: *R$ ${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}*\n`;
+
+    document.getElementById('wpp-preview').textContent = msg;
+    document.getElementById('wpp-copy-btn').textContent = 'Copiar Mensagem';
+    document.getElementById('wpp-overlay').classList.add('open');
+  }
+
+  function fecharWpp(e) {
+    if (e.target === document.getElementById('wpp-overlay')) fecharWppBtn();
+  }
+  function fecharWppBtn() {
+    document.getElementById('wpp-overlay').classList.remove('open');
+  }
+
+  function copiarWpp() {
+    const texto = document.getElementById('wpp-preview').textContent;
+    navigator.clipboard.writeText(texto).then(() => {
+      const btn = document.getElementById('wpp-copy-btn');
+      btn.textContent = '✓ Copiado!';
+      setTimeout(() => btn.textContent = 'Copiar Mensagem', 2000);
+    }).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = texto;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      document.getElementById('wpp-copy-btn').textContent = '✓ Copiado!';
+      setTimeout(() => document.getElementById('wpp-copy-btn').textContent = 'Copiar Mensagem', 2000);
+    });
+  }
+
+  // ── END EXPORT ────────────────────────────────────────────
 
   // Init
   renderInicio();
