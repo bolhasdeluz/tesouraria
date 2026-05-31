@@ -395,6 +395,70 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   </div>
 </div>
 
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-overlay" onclick="fecharModal('edit-overlay',event)">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <div class="modal-title" id="edit-modal-title">✏️ Editar Lançamento</div>
+      <button class="modal-close" onclick="document.getElementById('edit-overlay').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Campos entrada -->
+      <div id="edit-campos-entrada">
+        <div class="field"><label class="field-label">Membro</label>
+          <select id="edit-membro">
+            <option value="">Selecionar membro…</option>
+            <option>Ness</option><option>Thali</option><option>Jaque</option><option>Tassi</option>
+            <option>Brenda</option><option>Anne</option><option>Vitória</option><option>Manu</option>
+            <option>Juliana</option><option>Gabi</option><option>Márcia</option><option>Nicole</option><option>Stephani</option>
+          </select>
+        </div>
+        <div class="field"><label class="field-label">Mês de competência</label>
+          <select id="edit-competencia">
+            <option value="">Mesmo mês do pagamento</option>
+            <option value="2025-01">Janeiro/2025</option><option value="2025-02">Fevereiro/2025</option>
+            <option value="2025-03">Março/2025</option><option value="2025-04">Abril/2025</option>
+            <option value="2025-05">Maio/2025</option><option value="2025-06">Junho/2025</option>
+            <option value="2025-07">Julho/2025</option><option value="2025-08">Agosto/2025</option>
+            <option value="2025-09">Setembro/2025</option><option value="2025-10">Outubro/2025</option>
+            <option value="2025-11">Novembro/2025</option><option value="2025-12">Dezembro/2025</option>
+            <option value="2026-01">Janeiro/2026</option><option value="2026-02">Fevereiro/2026</option>
+            <option value="2026-03">Março/2026</option><option value="2026-04">Abril/2026</option>
+            <option value="2026-05">Maio/2026</option><option value="2026-06">Junho/2026</option>
+            <option value="2026-07">Julho/2026</option><option value="2026-08">Agosto/2026</option>
+            <option value="2026-09">Setembro/2026</option><option value="2026-10">Outubro/2026</option>
+            <option value="2026-11">Novembro/2026</option><option value="2026-12">Dezembro/2026</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Campos gasto -->
+      <div id="edit-campos-gasto">
+        <div class="field"><label class="field-label">Conta</label>
+          <select id="edit-conta">
+            <option value="">Selecionar conta…</option>
+            <option>Luz</option><option>Água</option><option>Alarme Serviço</option><option>Internet</option>
+            <option>Aluguel</option><option>Tambor</option><option>Agosto</option><option>Extras</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Campos comuns -->
+      <div class="field-row">
+        <div class="field"><label class="field-label">Valor (R$)</label><input type="number" id="edit-valor" placeholder="0,00" min="0" step="0.01"></div>
+        <div class="field"><label class="field-label">Data</label><input type="date" id="edit-data"></div>
+      </div>
+      <div class="field"><label class="field-label">Observação</label><input type="text" id="edit-obs" placeholder="Opcional…"></div>
+
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button onclick="salvarEdicao()" class="btn-primary" style="flex:2;">Salvar</button>
+        <button onclick="excluirLancamento()" class="btn-primary" style="flex:1;background:var(--red);">🗑 Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -521,6 +585,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       + '<div class="lancamento-info">'
       + '<div class="lancamento-nome">' + nome + '</div>'
       + badge + competenciaBadge + obs + comp
+      + '<button class="lancamento-clone" onclick="abrirEdicao(' + l.id + ')">✏️ Editar</button>'
       + '<button class="lancamento-clone" onclick="clonarLancamento(' + l.id + ')">⧉ Clonar</button>'
       + '</div>'
       + '<div class="lancamento-right">'
@@ -794,6 +859,76 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
       btn.textContent='✓ Copiado!'; setTimeout(function(){ btn.textContent='Copiar Mensagem'; }, 2000);
     }
+  }
+
+  // ── EDIÇÃO ────────────────────────────────────────────────
+  var editandoId = null;
+
+  function abrirEdicao(id) {
+    var l = lancamentos.find(function(x){ return x.id === id; });
+    if (!l) return;
+    editandoId = id;
+    var isEntrada = l.tipo === 'entrada';
+
+    document.getElementById('edit-modal-title').textContent = isEntrada ? '✏️ Editar Entrada' : '✏️ Editar Gasto';
+    document.getElementById('edit-campos-entrada').style.display = isEntrada ? 'flex' : 'none';
+    document.getElementById('edit-campos-entrada').style.flexDirection = 'column';
+    document.getElementById('edit-campos-entrada').style.gap = '14px';
+    document.getElementById('edit-campos-gasto').style.display = isEntrada ? 'none' : 'block';
+
+    if (isEntrada) {
+      document.getElementById('edit-membro').value = l.membro || '';
+      document.getElementById('edit-competencia').value = l.competencia || '';
+    } else {
+      document.getElementById('edit-conta').value = l.conta || '';
+    }
+
+    document.getElementById('edit-valor').value = l.valor || '';
+    document.getElementById('edit-data').value = l.data || today();
+    document.getElementById('edit-obs').value = l.obs || '';
+    document.getElementById('edit-overlay').classList.add('open');
+  }
+
+  function salvarEdicao() {
+    var l = lancamentos.find(function(x){ return x.id === editandoId; });
+    if (!l) return;
+    var valor = parseFloat(document.getElementById('edit-valor').value);
+    if (!valor || valor <= 0) { showToast('Informe o valor'); return; }
+
+    if (l.tipo === 'entrada') {
+      var membro = document.getElementById('edit-membro').value;
+      if (!membro) { showToast('Selecione um membro'); return; }
+      l.membro = membro;
+      l.competencia = document.getElementById('edit-competencia').value;
+    } else {
+      var conta = document.getElementById('edit-conta').value;
+      if (!conta) { showToast('Selecione a conta'); return; }
+      l.conta = conta;
+    }
+
+    l.valor = valor;
+    l.data = document.getElementById('edit-data').value;
+    l.obs = document.getElementById('edit-obs').value.trim();
+
+    save();
+    document.getElementById('edit-overlay').classList.remove('open');
+    showToast('Lançamento atualizado ✓');
+    var painelAtivo = document.querySelector('.panel.active') ? document.querySelector('.panel.active').id : '';
+    if (painelAtivo === 'painel-historico') renderHistorico();
+    else { renderInicio(); renderResumo(); }
+  }
+
+  function excluirLancamento() {
+    var idx = lancamentos.findIndex(function(x){ return x.id === editandoId; });
+    if (idx === -1) return;
+    lancamentos.splice(idx, 1);
+    save();
+    document.getElementById('edit-overlay').classList.remove('open');
+    showToast('Lançamento excluído');
+    var painelAtivo = document.querySelector('.panel.active') ? document.querySelector('.panel.active').id : '';
+    if (painelAtivo === 'painel-historico') renderHistorico();
+    else renderInicio();
+    renderResumo();
   }
 
   // ── INIT ──────────────────────────────────────────────────
