@@ -242,15 +242,27 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
   <!-- INÍCIO -->
   <div id="painel-inicio" class="panel active">
+
+    <!-- Filtro de mês -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <button onclick="mudarMesFiltro(-1)" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--gold);font-size:1rem;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">‹</button>
+      <div style="flex:1;text-align:center;">
+        <div id="filtro-mes-label" style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text);"></div>
+        <div id="filtro-mes-sub" style="font-family:'DM Sans',sans-serif;font-size:.68rem;color:var(--text-dim);margin-top:1px;"></div>
+      </div>
+      <button onclick="mudarMesFiltro(1)" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--gold);font-size:1rem;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">›</button>
+      <button onclick="filtroMesAtivo=null;renderInicio()" id="btn-todos-meses" style="background:none;border:1px solid var(--border);border-radius:8px;font-family:'Cinzel',serif;font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-dim);padding:6px 10px;cursor:pointer;white-space:nowrap;">Tudo</button>
+    </div>
+
     <div class="saldo-card">
-      <div class="saldo-label">Saldo atual</div>
+      <div class="saldo-label" id="saldo-label-mes">Saldo atual</div>
       <div class="saldo-valor" id="saldo-display">R$ 0,00</div>
       <div class="saldo-row">
         <div class="saldo-mini"><div class="saldo-mini-label">↑ Entradas</div><div class="saldo-mini-val" id="total-entradas-display">R$ 0,00</div></div>
         <div class="saldo-mini"><div class="saldo-mini-label">↓ Gastos</div><div class="saldo-mini-val" id="total-gastos-display">R$ 0,00</div></div>
       </div>
     </div>
-    <div class="section-header"><div class="section-title">Últimos lançamentos</div></div>
+    <div class="section-header"><div class="section-title" id="lancamentos-label">Últimos lançamentos</div></div>
     <div id="lista-recente"></div>
   </div>
 
@@ -594,16 +606,78 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       + '</div></div>';
   }
 
+  // ── FILTRO DE MÊS ─────────────────────────────────────────
+  var MESES_NOMES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var filtroMesAtivo = null; // null = todos, 'YYYY-MM' = mês específico
+
+  function inicializarFiltroMes() {
+    // Começa no mês atual
+    var agora = new Date();
+    filtroMesAtivo = agora.getFullYear() + '-' + String(agora.getMonth() + 1).padStart(2, '0');
+    atualizarLabelMes();
+  }
+
+  function atualizarLabelMes() {
+    var label = document.getElementById('filtro-mes-label');
+    var sub = document.getElementById('filtro-mes-sub');
+    var btnTodos = document.getElementById('btn-todos-meses');
+    if (!filtroMesAtivo) {
+      label.textContent = 'Todos os meses';
+      sub.textContent = '';
+      btnTodos.style.color = 'var(--gold)';
+      btnTodos.style.borderColor = 'var(--gold)';
+    } else {
+      var parts = filtroMesAtivo.split('-');
+      label.textContent = MESES_NOMES_FULL[parseInt(parts[1]) - 1] + ' ' + parts[0];
+      sub.textContent = '';
+      btnTodos.style.color = 'var(--text-dim)';
+      btnTodos.style.borderColor = 'var(--border)';
+    }
+  }
+
+  function mudarMesFiltro(delta) {
+    if (!filtroMesAtivo) {
+      var agora = new Date();
+      filtroMesAtivo = agora.getFullYear() + '-' + String(agora.getMonth() + 1).padStart(2, '0');
+    }
+    var parts = filtroMesAtivo.split('-');
+    var ano = parseInt(parts[0]), mes = parseInt(parts[1]) - 1;
+    var d = new Date(ano, mes + delta, 1);
+    filtroMesAtivo = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    atualizarLabelMes();
+    renderInicio();
+  }
+
+  function lancamentosDoMes(mes) {
+    // mes = 'YYYY-MM' ou null (todos)
+    if (!mes) return lancamentos;
+    return lancamentos.filter(function(l) {
+      // Para entradas com competência, usa competência; senão usa data
+      var ref = (l.tipo === 'entrada' && l.competencia) ? l.competencia : (l.data ? l.data.slice(0, 7) : '');
+      return ref === mes;
+    });
+  }
+
   // ── RENDER PANELS ─────────────────────────────────────────
   function renderInicio() {
-    var totalE = lancamentos.filter(function(l){ return l.tipo === 'entrada'; }).reduce(function(a,l){ return a + l.valor; }, 0);
-    var totalG = lancamentos.filter(function(l){ return l.tipo === 'gasto'; }).reduce(function(a,l){ return a + l.valor; }, 0);
+    atualizarLabelMes();
+    var lista = lancamentosDoMes(filtroMesAtivo);
+    var totalE = lista.filter(function(l){ return l.tipo === 'entrada'; }).reduce(function(a,l){ return a + l.valor; }, 0);
+    var totalG = lista.filter(function(l){ return l.tipo === 'gasto'; }).reduce(function(a,l){ return a + l.valor; }, 0);
     document.getElementById('saldo-display').textContent = fmt(totalE - totalG);
     document.getElementById('total-entradas-display').textContent = fmt(totalE);
     document.getElementById('total-gastos-display').textContent = fmt(totalG);
-    var recentes = lancamentos.slice(0, 5);
+    // Label dinâmico
+    document.getElementById('saldo-label-mes').textContent = filtroMesAtivo
+      ? 'Saldo — ' + MESES_NOMES_FULL[parseInt(filtroMesAtivo.split('-')[1]) - 1]
+      : 'Saldo acumulado';
+    document.getElementById('lancamentos-label').textContent = filtroMesAtivo ? 'Lançamentos do mês' : 'Últimos lançamentos';
+    var recentes = filtroMesAtivo ? lista : lista.slice(0, 5);
     var el = document.getElementById('lista-recente');
-    if (!recentes.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🕯️</div><div class="empty-text">Nenhum lançamento ainda</div></div>'; return; }
+    if (!recentes.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">🕯️</div><div class="empty-text">Nenhum lançamento' + (filtroMesAtivo ? ' neste mês' : ' ainda') + '</div></div>';
+      return;
+    }
     el.innerHTML = recentes.map(itemHTML).join('');
   }
 
@@ -932,6 +1006,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   }
 
   // ── INIT ──────────────────────────────────────────────────
+  inicializarFiltroMes();
   renderInicio();
 </script>
 
@@ -1186,13 +1261,15 @@ function agRenderPessoas() {
     var pg=agPgtos[p.nome], tAves=agAvesVal(p), tDeve=AG_OBRIGACAO+tAves, tPago=pg.obr+pg.aves;
     var sO=pg.obr>=AG_OBRIGACAO?'ok':(pg.obr>0?'pend':'nao');
     var sA=tAves===0?'ok':(pg.aves>=tAves?'ok':(pg.aves>0?'pend':'nao'));
+    var statusIcon = tPago>=tDeve ? '✅' : tPago>0 ? '🔶' : '❌';
     var card=document.createElement('div');
     card.className='ag-pessoa'; card.id='ag-pc-'+p.nome;
     card.innerHTML='<div class="ag-pessoa-hdr" onclick="agTogglePessoa(\''+p.nome+'\')">'
+      +'<span style="font-size:1rem;flex-shrink:0;">'+statusIcon+'</span>'
       +'<span class="ag-pessoa-nome">'+p.nome+'</span>'
       +'<span class="ag-pill ag-pill-'+sO+'">Obr</span>'
       +(tAves>0?'<span class="ag-pill ag-pill-'+sA+'">Aves</span>':'')
-      +'<span class="ag-pessoa-total">'+(tPago>0?agFmt(tPago):'—')+'</span>'
+      +'<span class="ag-pessoa-total">'+(tPago>0?agFmt(tPago):'')+'</span>'
       +'<span class="ag-chevron">▾</span></div>'
       +'<div class="ag-pessoa-body">'
       +'<div class="ag-pgto-grp"><div class="ag-pgto-grp-title">Obrigação (total: '+agFmt(AG_OBRIGACAO)+')</div>'
