@@ -203,6 +203,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     <div class="header-subtitle">Bolhas de Luz</div>
   </div>
   <div class="header-right">
+    <button onclick="document.getElementById('agosto-modal').classList.add('open')" style="background:linear-gradient(135deg,#8c5a00,#c88c00);border:none;border-radius:20px;color:#fff8e0;font-family:'Cinzel',serif;font-size:.7rem;font-weight:700;letter-spacing:.07em;padding:5px 12px;cursor:pointer;white-space:nowrap;">🕯 Agosto</button>
     <button class="export-btn" onclick="toggleExportMenu(event)">↑ Exportar</button>
     <div class="header-flame">🕯️</div>
   </div>
@@ -228,7 +229,6 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   <button class="nav-btn active" onclick="showPanel('painel-inicio', this)">Início</button>
   <button class="nav-btn" onclick="showPanel('painel-entrada', this)">+ Entrada</button>
   <button class="nav-btn" onclick="showPanel('painel-gasto', this)">+ Gasto</button>
-  <button class="nav-btn" onclick="abrirLote()">🗂️ Lote</button>
   <button class="nav-btn" onclick="showPanel('painel-historico', this)">Histórico</button>
   <button class="nav-btn" onclick="showPanel('painel-resumo', this)">Resumo</button>
 </nav>
@@ -307,10 +307,13 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
   <!-- HISTÓRICO -->
   <div id="painel-historico" class="panel">
-    <div class="filter-bar">
-      <button class="fbtn active" onclick="setFiltro('todos', this)">Todos</button>
-      <button class="fbtn verde" onclick="setFiltro('entrada', this)">Entradas</button>
-      <button class="fbtn" onclick="setFiltro('gasto', this)">Gastos</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div class="filter-bar" style="margin-bottom:0;flex:1;">
+        <button class="fbtn active" onclick="setFiltro('todos', this)">Todos</button>
+        <button class="fbtn verde" onclick="setFiltro('entrada', this)">Entradas</button>
+        <button class="fbtn" onclick="setFiltro('gasto', this)">Gastos</button>
+      </div>
+      <button onclick="abrirLote()" style="flex-shrink:0;margin-left:8px;background:linear-gradient(135deg,#2a7a60,#3a9a78);border:none;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.07em;padding:7px 12px;cursor:pointer;white-space:nowrap;">🗂️ Lote</button>
     </div>
     <div id="lista-historico"></div>
   </div>
@@ -761,6 +764,428 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
   // ── INIT ──────────────────────────────────────────────────
   renderInicio();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL AGOSTO — app completo embutido
+═══════════════════════════════════════════════════════════ -->
+<div id="agosto-modal" style="position:fixed;inset:0;z-index:500;background:#fff5f7;overflow-y:auto;display:none;">
+  <style>
+    #agosto-modal.open { display:block !important; }
+    /* Estilos escopados para o Agosto — prefixo .ag- */
+    #agosto-modal { font-family:'DM Sans',sans-serif; }
+    .ag-header { background:linear-gradient(135deg,#c0405a,#d4607a 60%,#e07a90); box-shadow:0 2px 20px rgba(180,60,90,.25); padding:14px 16px 12px; position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:flex-start; }
+    .ag-header h1 { font-family:'Cinzel',serif; font-size:.9rem; font-weight:700; color:#fff; letter-spacing:.1em; }
+    .ag-header p { font-size:.72rem; color:rgba(255,255,255,.7); margin-top:2px; }
+    .ag-back { background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.3); border-radius:20px; color:#fff; font-family:'Cinzel',serif; font-size:.68rem; font-weight:700; letter-spacing:.06em; padding:5px 12px; cursor:pointer; white-space:nowrap; }
+    .ag-saldo-bar { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 12px 0; }
+    .ag-saldo-card { background:#fff; border:1px solid rgba(196,57,107,.15); border-radius:10px; padding:10px 8px; text-align:center; box-shadow:0 2px 10px rgba(180,60,90,.06); }
+    .ag-saldo-card .ag-lbl { font-family:'Cinzel',serif; font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:rgba(80,30,50,.5); }
+    .ag-saldo-card .ag-val { font-family:'Crimson Pro',serif; font-size:1.1rem; font-weight:600; margin-top:2px; }
+    .ag-saldo-card.e .ag-val { color:#2a7a60; } .ag-saldo-card.s .ag-val { color:#b84040; } .ag-saldo-card.b .ag-val { color:#c4396b; } .ag-saldo-card.b { border-color:rgba(196,57,107,.3); background:rgba(196,57,107,.05); }
+    .ag-tabs { display:flex; gap:5px; padding:12px 12px 0; overflow-x:auto; scrollbar-width:none; }
+    .ag-tabs::-webkit-scrollbar { display:none; }
+    .ag-tab { font-family:'Cinzel',serif; font-size:9.5px; letter-spacing:.07em; font-weight:600; padding:6px 13px; border-radius:20px; border:1px solid rgba(196,57,107,.15); background:#fff; color:rgba(80,30,50,.5); cursor:pointer; white-space:nowrap; transition:all .2s; }
+    .ag-tab.active { background:#c4396b; border-color:#c4396b; color:#fff; }
+    .ag-sec { display:none; padding:12px; } .ag-sec.active { display:block; }
+    .ag-sec-title { font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:rgba(80,30,50,.5); margin-bottom:8px; }
+    /* Pessoas */
+    .ag-pessoa { background:#fff; border:1px solid rgba(196,57,107,.15); border-radius:10px; overflow:hidden; margin-bottom:7px; box-shadow:0 2px 10px rgba(180,60,90,.06); }
+    .ag-pessoa-hdr { display:flex; align-items:center; gap:7px; padding:9px 12px; cursor:pointer; }
+    .ag-pessoa-nome { font-family:'Crimson Pro',serif; font-size:.95rem; font-weight:600; flex:1; }
+    .ag-pill { font-family:'Cinzel',serif; font-size:7.5px; letter-spacing:.05em; padding:2px 6px; border-radius:20px; font-weight:600; }
+    .ag-pill-ok { background:#e8f4f0; color:#2a7a60; border:1px solid #b8ddd4; }
+    .ag-pill-pend { background:rgba(196,57,107,.08); color:#c4396b; border:1px solid rgba(196,57,107,.25); }
+    .ag-pill-nao { background:rgba(184,64,64,.08); color:#b84040; border:1px solid rgba(184,64,64,.2); }
+    .ag-pessoa-total { font-family:'DM Sans',sans-serif; font-size:.72rem; font-weight:500; color:#2a7a60; min-width:56px; text-align:right; }
+    .ag-chevron { font-size:.75rem; color:rgba(80,30,50,.5); transition:transform .2s; }
+    .ag-pessoa.open .ag-chevron { transform:rotate(180deg); }
+    .ag-pessoa-body { display:none; padding:0 12px 10px; border-top:1px solid rgba(196,57,107,.1); background:linear-gradient(135deg,#fde8ed,#fce8ef); }
+    .ag-pessoa.open .ag-pessoa-body { display:block; }
+    .ag-pgto-grp { margin-top:9px; }
+    .ag-pgto-grp-title { font-family:'Cinzel',serif; font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:rgba(80,30,50,.5); margin-bottom:5px; }
+    .ag-pgto-row { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
+    .ag-pgto-label { font-family:'DM Sans',sans-serif; font-size:.78rem; color:rgba(80,30,50,.5); min-width:75px; }
+    .ag-pgto-input { background:transparent; border:1px solid rgba(196,57,107,.15); border-radius:6px; color:#2a1a22; font-family:'Crimson Pro',serif; font-size:.9rem; padding:5px 7px; width:85px; text-align:right; -webkit-appearance:none; }
+    .ag-pgto-input:focus { outline:none; border-color:#c4396b; }
+    .ag-pgto-sub { font-family:'Crimson Pro',serif; font-size:.85rem; font-weight:600; color:#2a7a60; margin-top:2px; text-align:right; }
+    .ag-info { font-family:'DM Sans',sans-serif; font-size:.72rem; color:rgba(80,30,50,.5); margin-top:8px; padding:7px 10px; background:rgba(255,255,255,.6); border-radius:7px; border:1px solid rgba(196,57,107,.1); }
+    .ag-info span { color:#2a1a22; font-weight:500; }
+    /* Gastos */
+    .ag-add-btn { width:100%; background:#c4396b; border:none; border-radius:8px; color:#fff; font-family:'Cinzel',serif; font-size:10px; letter-spacing:.08em; font-weight:700; padding:10px; cursor:pointer; margin-bottom:10px; }
+    .ag-gasto-item { background:#fff; border:1px solid rgba(196,57,107,.12); border-radius:9px; padding:9px 11px; margin-bottom:5px; display:flex; align-items:center; gap:9px; }
+    .ag-gasto-desc { font-family:'Crimson Pro',serif; font-size:.92rem; font-weight:600; }
+    .ag-gasto-meta { font-family:'DM Sans',sans-serif; font-size:.7rem; color:rgba(80,30,50,.5); margin-top:1px; }
+    .ag-gasto-val { font-family:'Crimson Pro',serif; font-size:.95rem; font-weight:600; color:#b84040; }
+    .ag-gasto-del { background:none; border:none; color:rgba(80,30,50,.4); cursor:pointer; font-size:.9rem; padding:2px 4px; }
+    .ag-gasto-del:hover { color:#b84040; }
+    /* Orçamento */
+    .ag-orc-total { background:rgba(196,57,107,.07); border:1px solid rgba(196,57,107,.2); border-radius:9px; padding:9px 13px; margin-bottom:12px; }
+    .ag-orc-total .ag-lbl { font-family:'Cinzel',serif; font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:#c4396b; }
+    .ag-orc-total .ag-val { font-family:'Crimson Pro',serif; font-size:1.5rem; font-weight:600; color:#c4396b; }
+    .ag-cat-block { background:#fff; border:1px solid rgba(196,57,107,.12); border-radius:10px; overflow:hidden; margin-bottom:7px; }
+    .ag-cat-hdr { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; cursor:pointer; background:linear-gradient(135deg,#fde8ed,#fce8ef); }
+    .ag-cat-nome { font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:.06em; font-weight:600; color:#c4396b; }
+    .ag-cat-sub { font-family:'Crimson Pro',serif; font-size:.9rem; font-weight:600; color:#2a1a22; }
+    .ag-cat-body { display:none; padding:8px 12px 10px; }
+    .ag-cat-block.open .ag-cat-body { display:block; }
+    .ag-cat-block.open .ag-chevron { transform:rotate(180deg); }
+    .ag-item-row { display:flex; align-items:center; gap:6px; padding:6px 0; border-bottom:1px solid rgba(196,57,107,.08); }
+    .ag-item-row:last-of-type { border-bottom:none; }
+    .ag-item-chk { width:15px; height:15px; accent-color:#c4396b; cursor:pointer; flex-shrink:0; }
+    .ag-item-desc { flex:1; font-family:'DM Sans',sans-serif; font-size:.82rem; color:#2a1a22; }
+    .ag-item-desc.pago { text-decoration:line-through; color:rgba(80,30,50,.5); }
+    .ag-item-val { font-family:'Crimson Pro',serif; font-size:.88rem; font-weight:600; color:rgba(80,30,50,.5); }
+    .ag-item-del { background:none; border:none; color:rgba(80,30,50,.4); cursor:pointer; font-size:.8rem; }
+    .ag-item-del:hover { color:#b84040; }
+    .ag-add-item-row { display:flex; gap:5px; margin-top:8px; }
+    .ag-add-item-row input { background:transparent; border:1px solid rgba(196,57,107,.15); border-radius:6px; color:#2a1a22; font-family:'DM Sans',sans-serif; font-size:13px; padding:6px 8px; -webkit-appearance:none; }
+    .ag-add-item-row input:focus { outline:none; border-color:#c4396b; }
+    .ag-add-item-btn { background:#c4396b; border:none; border-radius:6px; color:#fff; font-family:'Cinzel',serif; font-size:9px; font-weight:700; padding:6px 9px; cursor:pointer; white-space:nowrap; }
+    /* Aves */
+    .ag-aves-resumo { background:#fff; border:1px solid rgba(196,57,107,.12); border-radius:10px; overflow:hidden; margin-bottom:12px; }
+    .ag-aves-resumo-hdr { background:linear-gradient(135deg,#fde8ed,#fce8ef); padding:9px 12px; font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:.06em; font-weight:600; color:#c4396b; display:flex; justify-content:space-between; }
+    .ag-aves-body { padding:8px 12px; }
+    .ag-aves-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid rgba(196,57,107,.08); font-family:'DM Sans',sans-serif; font-size:.8rem; }
+    .ag-aves-row:last-child { border-bottom:none; }
+    .ag-aves-val { font-family:'Crimson Pro',serif; font-weight:600; color:#2a7a60; }
+    /* Modal de gasto Agosto */
+    .ag-gasto-modal-overlay { display:none; position:fixed; inset:0; background:rgba(40,10,20,.55); backdrop-filter:blur(4px); z-index:600; align-items:flex-end; justify-content:center; }
+    .ag-gasto-modal-overlay.open { display:flex; }
+    .ag-gasto-modal { background:#fff; border:1px solid rgba(196,57,107,.15); border-top:3px solid #c4396b; border-radius:12px 12px 0 0; padding:18px; width:100%; max-width:500px; animation:slideUp .25s ease; }
+    .ag-gasto-modal h3 { font-family:'Cinzel',serif; font-size:.78rem; letter-spacing:.1em; text-transform:uppercase; color:#c4396b; margin-bottom:13px; }
+    .ag-form-row { margin-bottom:9px; }
+    .ag-form-row label { font-family:'Cinzel',serif; font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:rgba(80,30,50,.5); display:block; margin-bottom:3px; }
+    .ag-form-row input, .ag-form-row select { width:100%; background:transparent; border:1px solid rgba(196,57,107,.15); border-radius:6px; color:#2a1a22; font-family:'Crimson Pro',serif; font-size:16px; padding:8px 11px; -webkit-appearance:none; }
+    .ag-form-row input:focus, .ag-form-row select:focus { outline:none; border-color:#c4396b; }
+    .ag-modal-btns { display:flex; gap:7px; margin-top:12px; }
+    .ag-btn-cancel { flex:1; background:none; border:1px solid rgba(196,57,107,.15); border-radius:6px; color:rgba(80,30,50,.5); font-family:'Cinzel',serif; font-size:10px; letter-spacing:.07em; padding:9px; cursor:pointer; }
+    .ag-btn-save { flex:2; background:#c4396b; border:none; border-radius:8px; color:#fff; font-family:'Cinzel',serif; font-size:10px; letter-spacing:.07em; font-weight:700; padding:9px; cursor:pointer; }
+    .ag-empty { text-align:center; padding:25px; color:rgba(80,30,50,.5); font-family:'Crimson Pro',serif; font-style:italic; font-size:.88rem; }
+  </style>
+
+  <!-- Header Agosto -->
+  <div class="ag-header">
+    <div>
+      <h1>🕯 Obrigação de Agosto</h1>
+      <p>Bolhas de Luz — Controle Financeiro</p>
+    </div>
+    <button class="ag-back" onclick="document.getElementById('agosto-modal').classList.remove('open')">✕ Fechar</button>
+  </div>
+
+  <!-- Saldo -->
+  <div class="ag-saldo-bar">
+    <div class="ag-saldo-card e"><div class="ag-lbl">Entradas</div><div class="ag-val" id="ag-totalE">R$0</div></div>
+    <div class="ag-saldo-card s"><div class="ag-lbl">Saídas</div><div class="ag-val" id="ag-totalS">R$0</div></div>
+    <div class="ag-saldo-card b"><div class="ag-lbl">Saldo</div><div class="ag-val" id="ag-saldo">R$0</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="ag-tabs">
+    <button class="ag-tab active" onclick="agShowTab('pessoas',this)">👥 Pessoas</button>
+    <button class="ag-tab" onclick="agShowTab('gastos',this)">💸 Gastos</button>
+    <button class="ag-tab" onclick="agShowTab('orcamento',this)">📋 Orçamento</button>
+    <button class="ag-tab" onclick="agShowTab('aves',this)">🐓 Aves</button>
+  </div>
+
+  <!-- Sec Pessoas -->
+  <div class="ag-sec active" id="ag-sec-pessoas">
+    <p class="ag-sec-title">Pagamentos por Pessoa</p>
+    <div id="ag-pessoas-list"></div>
+  </div>
+
+  <!-- Sec Gastos -->
+  <div class="ag-sec" id="ag-sec-gastos">
+    <button class="ag-add-btn" onclick="agOpenGastoModal()">+ REGISTRAR GASTO</button>
+    <p class="ag-sec-title">Gastos Registrados</p>
+    <div id="ag-gastos-list"></div>
+  </div>
+
+  <!-- Sec Orçamento -->
+  <div class="ag-sec" id="ag-sec-orcamento">
+    <div class="ag-orc-total"><div class="ag-lbl">Total Orçado</div><div class="ag-val" id="ag-orc-total">R$ 0,00</div></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <p class="ag-sec-title" style="margin:0">Categorias</p>
+      <button class="ag-add-item-btn" onclick="agAddCat()">+ Categoria</button>
+    </div>
+    <div id="ag-add-cat-row" style="display:none;margin-bottom:10px;">
+      <div class="ag-add-item-row">
+        <input id="ag-nova-cat" placeholder="Nome da categoria…" style="flex:1;">
+        <button class="ag-add-item-btn" onclick="agConfirmarCat()">Criar</button>
+        <button class="ag-btn-cancel" style="padding:6px 9px;" onclick="document.getElementById('ag-add-cat-row').style.display='none'">✕</button>
+      </div>
+    </div>
+    <div id="ag-cats-list"></div>
+  </div>
+
+  <!-- Sec Aves -->
+  <div class="ag-sec" id="ag-sec-aves">
+    <div class="ag-aves-resumo">
+      <div class="ag-aves-resumo-hdr"><span>Resumo de Aves</span><span id="ag-aves-total" style="font-family:'Crimson Pro',serif;font-size:.95rem;color:#2a1a22">R$ 0,00</span></div>
+      <div class="ag-aves-body" id="ag-aves-body"></div>
+    </div>
+    <p class="ag-sec-title">Preços unitários</p>
+    <div style="background:#fff;border:1px solid rgba(196,57,107,.12);border-radius:9px;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:.82rem;display:flex;gap:18px;">
+      <div>🐓 Galo: <strong>R$ 58,00</strong></div>
+      <div>🐔 Galinha: <strong>R$ 53,00</strong></div>
+    </div>
+    <div style="margin-top:8px;background:#fff;border:1px solid rgba(196,57,107,.12);border-radius:9px;padding:10px 13px;">
+      <p style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:.1em;color:rgba(80,30,50,.5);margin-bottom:7px;">TOTAIS</p>
+      <div id="ag-aves-totais"></div>
+    </div>
+  </div>
+
+  <div style="height:40px;"></div>
+</div>
+
+<!-- Modal gasto Agosto -->
+<div class="ag-gasto-modal-overlay" id="ag-gasto-modal">
+  <div class="ag-gasto-modal">
+    <h3>Registrar Gasto</h3>
+    <div class="ag-form-row"><label>Descrição</label><input id="ag-g-desc" placeholder="Ex: Velas brancas…"></div>
+    <div class="ag-form-row"><label>Valor (R$)</label><input id="ag-g-val" type="number" step="0.01" placeholder="0,00"></div>
+    <div class="ag-form-row"><label>Categoria</label><input id="ag-g-cat" placeholder="Ex: Rituais, Transporte…"></div>
+    <div class="ag-form-row"><label>Data</label><input id="ag-g-data" type="date"></div>
+    <div class="ag-form-row"><label>Responsável</label>
+      <select id="ag-g-resp">
+        <option value="">— Ninguém / Geral —</option>
+        <option>Ness</option><option>Thali</option><option>Jaque</option><option>Tassi</option>
+        <option>Brenda</option><option>Anne</option><option>Vitória</option><option>Manu</option>
+        <option>Juliana</option><option>Gabi</option><option>Márcia</option><option>Nicole</option><option>Stephani</option>
+      </select>
+    </div>
+    <div class="ag-modal-btns">
+      <button class="ag-btn-cancel" onclick="document.getElementById('ag-gasto-modal').classList.remove('open')">Cancelar</button>
+      <button class="ag-btn-save" onclick="agSalvarGasto()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ AGOSTO DATA ══════════════════════════════════════════════
+var AG_PRECO_GALO = 58, AG_PRECO_GALINHA = 53, AG_OBRIGACAO = 270;
+
+var agPessoas = [
+  {nome:'Anna',galos:3,galinhas:0},{nome:'Ness',galos:0,galinhas:0},{nome:'Thali',galos:0,galinhas:0},
+  {nome:'Jaque',galos:2,galinhas:3},{nome:'Tassi',galos:1,galinhas:1},{nome:'Brenda',galos:1,galinhas:1},
+  {nome:'Anne',galos:0,galinhas:0},{nome:'Vitória',galos:1,galinhas:1},{nome:'Manu',galos:1,galinhas:1},
+  {nome:'Juliana',galos:1,galinhas:1},{nome:'Gabi',galos:0,galinhas:1},{nome:'Márcia',galos:0,galinhas:0},
+  {nome:'Nicole',galos:0,galinhas:0},{nome:'Stephani',galos:0,galinhas:0}
+];
+
+var agPgtos    = JSON.parse(localStorage.getItem('ag_pgtos') || 'null') || {};
+var agGastos   = JSON.parse(localStorage.getItem('ag_gastos') || '[]');
+var agCats     = JSON.parse(localStorage.getItem('ag_cats') || 'null') || [
+  {nome:'Umbanda',   itens:[{desc:'Umbanda geral',val:100,pago:false,resp:''}]},
+  {nome:'Padês',     itens:[{desc:'Padês',val:170,pago:false,resp:''}]},
+  {nome:'Elebó',     itens:[{desc:'Elebó',val:150,pago:false,resp:''}]},
+  {nome:'4pé Tranca Ruas',itens:[{desc:'4pé tranca ruas',val:700,pago:false,resp:''}]},
+  {nome:'Tambor / Agê',   itens:[{desc:'Tambor/Agê – 4 toques',val:680,pago:false,resp:''}]},
+  {nome:'Transporte',itens:[{desc:'Uber – 4 toques',val:240,pago:false,resp:''}]},
+  {nome:'Extras',    itens:[{desc:'Extras diversos',val:200,pago:false,resp:''}]}
+];
+
+agPessoas.forEach(function(p){ if(!agPgtos[p.nome]) agPgtos[p.nome]={obr:0,aves:0}; });
+
+function agSalvar() {
+  localStorage.setItem('ag_pgtos', JSON.stringify(agPgtos));
+  localStorage.setItem('ag_gastos', JSON.stringify(agGastos));
+  localStorage.setItem('ag_cats', JSON.stringify(agCats));
+}
+
+function agFmt(v) { return 'R$ '+Number(v).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+function agFmtS(v) { return 'R$'+Number(v).toFixed(0); }
+function agAvesVal(p) { return p.galos*AG_PRECO_GALO + p.galinhas*AG_PRECO_GALINHA; }
+
+// ── SALDO ────────────────────────────────────────────────────
+function agAtualizarSaldo() {
+  var e=0, s=agGastos.reduce(function(a,g){return a+g.valor;},0);
+  agPessoas.forEach(function(p){ var pg=agPgtos[p.nome]; e+=pg.obr+pg.aves; });
+  document.getElementById('ag-totalE').textContent=agFmtS(e);
+  document.getElementById('ag-totalS').textContent=agFmtS(s);
+  var sal=e-s;
+  var el=document.getElementById('ag-saldo');
+  el.textContent=agFmtS(sal);
+  el.style.color=sal>=0?'#2a7a60':'#b84040';
+}
+
+// ── PESSOAS ──────────────────────────────────────────────────
+function agRenderPessoas() {
+  var list=document.getElementById('ag-pessoas-list');
+  list.innerHTML='';
+  agPessoas.forEach(function(p) {
+    var pg=agPgtos[p.nome], tAves=agAvesVal(p), tDeve=AG_OBRIGACAO+tAves, tPago=pg.obr+pg.aves;
+    var sO=pg.obr>=AG_OBRIGACAO?'ok':(pg.obr>0?'pend':'nao');
+    var sA=tAves===0?'ok':(pg.aves>=tAves?'ok':(pg.aves>0?'pend':'nao'));
+    var card=document.createElement('div');
+    card.className='ag-pessoa'; card.id='ag-pc-'+p.nome;
+    card.innerHTML='<div class="ag-pessoa-hdr" onclick="agTogglePessoa(\''+p.nome+'\')">'
+      +'<span class="ag-pessoa-nome">'+p.nome+'</span>'
+      +'<span class="ag-pill ag-pill-'+sO+'">Obr</span>'
+      +(tAves>0?'<span class="ag-pill ag-pill-'+sA+'">Aves</span>':'')
+      +'<span class="ag-pessoa-total">'+(tPago>0?agFmt(tPago):'—')+'</span>'
+      +'<span class="ag-chevron">▾</span></div>'
+      +'<div class="ag-pessoa-body">'
+      +'<div class="ag-pgto-grp"><div class="ag-pgto-grp-title">Obrigação (total: '+agFmt(AG_OBRIGACAO)+')</div>'
+      +'<div class="ag-pgto-row"><span class="ag-pgto-label">Já pagou:</span>'
+      +'<input class="ag-pgto-input" type="number" step="0.01" value="'+pg.obr+'" onchange="agSetPgto(\''+p.nome+'\',\'obr\',this.value)"></div>'
+      +'<div class="ag-pgto-sub">'+agFmt(pg.obr)+' / '+agFmt(AG_OBRIGACAO)+' '+(pg.obr>=AG_OBRIGACAO?'✅':'— falta '+agFmt(AG_OBRIGACAO-pg.obr))+'</div></div>'
+      +(tAves>0
+        ?'<div class="ag-pgto-grp" style="margin-top:8px"><div class="ag-pgto-grp-title">Aves — '+p.galos+'🐓 + '+p.galinhas+'🐔 = '+agFmt(tAves)+'</div>'
+         +'<div class="ag-pgto-row"><span class="ag-pgto-label">Já pagou:</span>'
+         +'<input class="ag-pgto-input" type="number" step="0.01" value="'+pg.aves+'" onchange="agSetPgto(\''+p.nome+'\',\'aves\',this.value)"></div>'
+         +'<div class="ag-pgto-sub">'+agFmt(pg.aves)+' / '+agFmt(tAves)+' '+(pg.aves>=tAves?'✅':'— falta '+agFmt(tAves-pg.aves))+'</div></div>'
+        :'<div class="ag-info" style="margin-top:8px">Sem aves registradas</div>')
+      +'<div class="ag-info" style="margin-top:8px">Total: <span>'+agFmt(tPago)+'</span> de <span>'+agFmt(tDeve)+'</span>'
+      +(tPago>=tDeve?' ✅ Quitado!':' — falta '+agFmt(tDeve-tPago))+'</div>'
+      +'</div>';
+    list.appendChild(card);
+  });
+}
+function agTogglePessoa(nome) { document.getElementById('ag-pc-'+nome).classList.toggle('open'); }
+function agSetPgto(nome,campo,val) {
+  agPgtos[nome][campo]=parseFloat(val)||0;
+  agSalvar(); agAtualizarSaldo(); agRenderPessoas();
+  setTimeout(function(){ var c=document.getElementById('ag-pc-'+nome); if(c) c.classList.add('open'); },10);
+}
+
+// ── GASTOS ───────────────────────────────────────────────────
+function agOpenGastoModal() {
+  document.getElementById('ag-g-desc').value='';
+  document.getElementById('ag-g-val').value='';
+  document.getElementById('ag-g-cat').value='';
+  document.getElementById('ag-g-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('ag-g-resp').value='';
+  document.getElementById('ag-gasto-modal').classList.add('open');
+}
+function agSalvarGasto() {
+  var desc=document.getElementById('ag-g-desc').value.trim();
+  var val=parseFloat(document.getElementById('ag-g-val').value);
+  var cat=document.getElementById('ag-g-cat').value.trim()||'Geral';
+  var data=document.getElementById('ag-g-data').value;
+  var resp=document.getElementById('ag-g-resp').value;
+  if(!desc||!val){showToast('Preencha descrição e valor');return;}
+  agGastos.push({desc:desc,valor:val,categoria:cat,data:data,responsavel:resp});
+  agSalvar(); document.getElementById('ag-gasto-modal').classList.remove('open');
+  agRenderGastos(); agAtualizarSaldo(); showToast('Gasto registrado ✓');
+}
+function agDelGasto(i) {
+  agGastos.splice(i,1); agSalvar(); agRenderGastos(); agAtualizarSaldo();
+}
+function agRenderGastos() {
+  var list=document.getElementById('ag-gastos-list');
+  if(!agGastos.length){list.innerHTML='<div class="ag-empty">Nenhum gasto registrado ainda</div>';return;}
+  var grupos={};
+  agGastos.forEach(function(g,i){ if(!grupos[g.categoria]) grupos[g.categoria]=[]; grupos[g.categoria].push(Object.assign({},g,{idx:i})); });
+  list.innerHTML='';
+  Object.entries(grupos).forEach(function(e) {
+    var cat=e[0], itens=e[1];
+    var catTotal=itens.reduce(function(s,g){return s+g.valor;},0);
+    var div=document.createElement('div');
+    div.innerHTML='<div style="font-family:\'Cinzel\',serif;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(80,30,50,.5);margin:9px 0 4px;display:flex;justify-content:space-between"><span>'+cat+'</span><span style="color:#b84040">'+agFmt(catTotal)+'</span></div>';
+    itens.forEach(function(g) {
+      var item=document.createElement('div');
+      item.className='ag-gasto-item';
+      item.innerHTML='<div style="flex:1"><div class="ag-gasto-desc">'+g.desc+'</div><div class="ag-gasto-meta">'+[g.data,g.responsavel].filter(Boolean).join(' · ')+'</div></div>'
+        +'<div class="ag-gasto-val">'+agFmt(g.valor)+'</div>'
+        +'<button class="ag-gasto-del" onclick="agDelGasto('+g.idx+')">🗑</button>';
+      div.appendChild(item);
+    });
+    list.appendChild(div);
+  });
+}
+
+// ── ORÇAMENTO ────────────────────────────────────────────────
+function agRenderOrc() {
+  var list=document.getElementById('ag-cats-list');
+  list.innerHTML=''; var total=0;
+  agCats.forEach(function(cat,ci) {
+    var sub=cat.itens.reduce(function(s,i){return s+i.val;},0); total+=sub;
+    var block=document.createElement('div');
+    block.className='ag-cat-block'; block.id='ag-cat-'+ci;
+    var itensHTML=cat.itens.map(function(item,ii){
+      return '<div class="ag-item-row'+(item.pago?' ag-item-pago':'')+'"><input type="checkbox" class="ag-item-chk"'+(item.pago?' checked':'')
+        +' onchange="agTogglePago('+ci+','+ii+',this.checked)"><span class="ag-item-desc'+(item.pago?' pago':'')+'">'+item.desc
+        +(item.pago?'<span style="font-size:.62rem;background:#e8f4f0;color:#2a7a60;border-radius:10px;padding:1px 5px;margin-left:4px">→ Gastos</span>':'')
+        +'</span><span class="ag-item-val" style="'+(item.pago?'color:#2a7a60':'')+'">'+agFmt(item.val)+'</span>'
+        +'<button class="ag-item-del" onclick="agDelItem('+ci+','+ii+')">🗑</button></div>';
+    }).join('');
+    block.innerHTML='<div class="ag-cat-hdr" onclick="agToggleCat('+ci+')">'
+      +'<span class="ag-cat-nome">'+cat.nome+'</span>'
+      +'<div style="display:flex;align-items:center;gap:7px"><span class="ag-cat-sub">'+agFmt(sub)+'</span><span class="ag-chevron" style="color:rgba(80,30,50,.5)">▾</span></div>'
+      +'</div><div class="ag-cat-body">'+(itensHTML||'<div style="color:rgba(80,30,50,.5);font-size:.8rem;padding:4px 0">Nenhum item</div>')
+      +'<div class="ag-add-item-row" style="margin-top:7px"><input id="ag-ni-desc-'+ci+'" placeholder="Item…" style="flex:2;min-width:100px">'
+      +'<input id="ag-ni-val-'+ci+'" type="number" step="0.01" placeholder="0,00" style="flex:1;text-align:right">'
+      +'<button class="ag-add-item-btn" onclick="agAddItem('+ci+')">+ ADD</button></div>'
+      +'<button onclick="agDelCat('+ci+')" style="margin-top:7px;background:none;border:none;color:rgba(80,30,50,.4);font-family:\'DM Sans\',sans-serif;font-size:.72rem;cursor:pointer">🗑 Excluir categoria</button>'
+      +'</div>';
+    list.appendChild(block);
+  });
+  document.getElementById('ag-orc-total').textContent=agFmt(total);
+}
+function agToggleCat(ci){document.getElementById('ag-cat-'+ci).classList.toggle('open');}
+function agAddItem(ci){
+  var desc=document.getElementById('ag-ni-desc-'+ci).value.trim();
+  var val=parseFloat(document.getElementById('ag-ni-val-'+ci).value)||0;
+  if(!desc) return;
+  agCats[ci].itens.push({desc:desc,val:val,pago:false,resp:''}); agSalvar(); agRenderOrc();
+  setTimeout(function(){document.getElementById('ag-cat-'+ci).classList.add('open');},10);
+}
+function agDelItem(ci,ii){agCats[ci].itens.splice(ii,1);agSalvar();agRenderOrc();setTimeout(function(){document.getElementById('ag-cat-'+ci).classList.add('open');},10);}
+function agTogglePago(ci,ii,val){
+  var item=agCats[ci].itens[ii]; item.pago=val;
+  if(val){agGastos.push({desc:item.desc,valor:item.val,categoria:agCats[ci].nome,data:new Date().toISOString().split('T')[0],responsavel:item.resp||'',fromOrc:true});showToast('✓ Movido para Gastos!');}
+  else{var idx=agGastos.findIndex(function(g){return g.fromOrc&&g.desc===item.desc&&g.valor===item.val&&g.categoria===agCats[ci].nome;});if(idx!==-1)agGastos.splice(idx,1);showToast('Removido dos Gastos');}
+  agSalvar(); agAtualizarSaldo(); agRenderGastos(); agRenderOrc();
+  setTimeout(function(){document.getElementById('ag-cat-'+ci).classList.add('open');},10);
+}
+function agAddCat(){document.getElementById('ag-add-cat-row').style.display='block';document.getElementById('ag-nova-cat').focus();}
+function agConfirmarCat(){
+  var nome=document.getElementById('ag-nova-cat').value.trim(); if(!nome)return;
+  agCats.push({nome:nome,itens:[]}); agSalvar();
+  document.getElementById('ag-add-cat-row').style.display='none';
+  document.getElementById('ag-nova-cat').value=''; agRenderOrc();
+}
+function agDelCat(ci){agCats.splice(ci,1);agSalvar();agRenderOrc();}
+
+// ── AVES ─────────────────────────────────────────────────────
+function agRenderAves(){
+  var body=document.getElementById('ag-aves-body'); body.innerHTML='';
+  var tG=0,tH=0;
+  agPessoas.forEach(function(p){
+    if(!p.galos&&!p.galinhas) return;
+    tG+=p.galos; tH+=p.galinhas;
+    var val=agAvesVal(p), row=document.createElement('div');
+    row.className='ag-aves-row';
+    row.innerHTML='<span>'+p.nome+'</span><span style="font-size:.75rem;color:rgba(80,30,50,.5)">'+(p.galos?p.galos+'🐓 ':'')+( p.galinhas?p.galinhas+'🐔':'')+'</span><span class="ag-aves-val">'+agFmt(val)+'</span>';
+    body.appendChild(row);
+  });
+  var tv=tG*AG_PRECO_GALO+tH*AG_PRECO_GALINHA;
+  document.getElementById('ag-aves-total').textContent=agFmt(tv);
+  document.getElementById('ag-aves-totais').innerHTML='<div class="ag-aves-row"><span>Total galos</span><span style="color:rgba(80,30,50,.5);font-size:.76rem">'+tG+' × R$'+AG_PRECO_GALO+'</span><span class="ag-aves-val">'+agFmt(tG*AG_PRECO_GALO)+'</span></div>'
+    +'<div class="ag-aves-row"><span>Total galinhas</span><span style="color:rgba(80,30,50,.5);font-size:.76rem">'+tH+' × R$'+AG_PRECO_GALINHA+'</span><span class="ag-aves-val">'+agFmt(tH*AG_PRECO_GALINHA)+'</span></div>'
+    +'<div class="ag-aves-row" style="font-weight:700"><span>TOTAL AVES</span><span></span><span class="ag-aves-val">'+agFmt(tv)+'</span></div>';
+}
+
+// ── TABS ─────────────────────────────────────────────────────
+function agShowTab(id,btn){
+  document.querySelectorAll('.ag-sec').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.ag-tab').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('ag-sec-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── INIT AGOSTO (roda quando o modal abre) ────────────────────
+document.getElementById('agosto-modal').addEventListener('transitionend',function(){});
+(function agInit(){
+  agRenderPessoas(); agRenderGastos(); agRenderOrc(); agRenderAves(); agAtualizarSaldo();
+})();
+
+// Re-render ao abrir o modal (garante dados frescos)
+document.querySelector('[onclick="document.getElementById(\'agosto-modal\').classList.add(\'open\')"]')
+  .addEventListener('click',function(){
+    agRenderPessoas(); agRenderGastos(); agRenderOrc(); agRenderAves(); agAtualizarSaldo();
+  });
 </script>
 </body>
 </html>
