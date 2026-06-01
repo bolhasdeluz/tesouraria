@@ -1049,19 +1049,20 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     document.getElementById('export-de').value = datas.length ? datas[datas.length-1].slice(0,7) : mesAtual;
     document.getElementById('export-ate').value = mesAtual;
     // Reset privacidade
-    document.getElementById('export-privacidade').checked = false;
+    privacidadeAtiva = false;
     document.getElementById('privacy-toggle-track').style.background = 'var(--border)';
     document.getElementById('privacy-toggle-thumb').style.left = '3px';
     atualizarPreviewExport();
     document.getElementById('export-config-overlay').classList.add('open');
   }
 
+  var privacidadeAtiva = false;
+
   function togglePrivacidade() {
-    var cb = document.getElementById('export-privacidade');
-    cb.checked = !cb.checked;
+    privacidadeAtiva = !privacidadeAtiva;
     var track = document.getElementById('privacy-toggle-track');
     var thumb = document.getElementById('privacy-toggle-thumb');
-    if (cb.checked) {
+    if (privacidadeAtiva) {
       track.style.background = 'var(--gold)';
       thumb.style.left = '21px';
     } else {
@@ -1071,7 +1072,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   }
 
   function isPrivacidade() {
-    return document.getElementById('export-privacidade').checked;
+    return privacidadeAtiva;
   }
 
   function atualizarPreviewExport() {
