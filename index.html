@@ -209,26 +209,13 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   </div>
   <div class="header-right">
     <button onclick="document.getElementById('agosto-modal').classList.add('open')" style="background:linear-gradient(135deg,#8c5a00,#c88c00);border:none;border-radius:20px;color:#fff8e0;font-family:'Cinzel',serif;font-size:.7rem;font-weight:700;letter-spacing:.07em;padding:5px 12px;cursor:pointer;white-space:nowrap;">🕯 Agosto</button>
-    <button class="export-btn" onclick="toggleExportMenu(event)">↑ Exportar</button>
+    <button class="export-btn" onclick="abrirExportConfig()">↑ Exportar</button>
     <div class="header-flame">🕯️</div>
   </div>
 </header>
 
-<!-- EXPORT DROPDOWN -->
-<div class="export-dropdown" id="export-dropdown">
-  <div class="export-item" onclick="exportPrint()">
-    <span class="export-item-icon">🖨️</span>
-    <div><div class="export-item-label">PDF / Imprimir</div><div class="export-item-desc">Salvar como PDF ou imprimir</div></div>
-  </div>
-  <div class="export-item" onclick="exportCSV()">
-    <span class="export-item-icon">📊</span>
-    <div><div class="export-item-label">Excel / CSV</div><div class="export-item-desc">Baixar tabela completa</div></div>
-  </div>
-  <div class="export-item" onclick="exportWhatsApp()">
-    <span class="export-item-icon">💬</span>
-    <div><div class="export-item-label">WhatsApp</div><div class="export-item-desc">Resumo formatado para copiar</div></div>
-  </div>
-</div>
+<!-- EXPORT DROPDOWN (mantido vazio, não usado mais) -->
+<div class="export-dropdown" id="export-dropdown"></div>
 
 <nav class="nav">
   <button class="nav-btn active" onclick="showPanel('painel-inicio', this)">Início</button>
@@ -552,6 +539,30 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
         </div>
       </div>
       <button class="btn-primary" style="background:var(--red);" onclick="salvarPendente()">Salvar como Pendente</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT CONFIG MODAL -->
+<div class="modal-overlay" id="export-config-overlay" onclick="fecharModal('export-config-overlay',event)">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <div class="modal-title">↑ Exportar Prestação de Contas</div>
+      <button class="modal-close" onclick="document.getElementById('export-config-overlay').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label class="field-label">De</label><input type="month" id="export-de"></div>
+        <div class="field"><label class="field-label">Até</label><input type="month" id="export-ate"></div>
+      </div>
+      <div style="background:var(--gold-dim);border:1px solid var(--border);border-radius:8px;padding:10px 13px;">
+        <div id="export-preview-count" style="font-family:'DM Sans',sans-serif;font-size:.8rem;color:var(--text-dim);"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button onclick="exportarPrestacao('pdf')" class="btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;">🖨️ PDF / Imprimir</button>
+        <button onclick="exportarPrestacao('csv')" class="btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--green);">📊 Excel / CSV</button>
+        <button onclick="exportarPrestacao('wpp')" class="btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;">💬 WhatsApp</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1017,52 +1028,285 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
   function exportPrint() { document.getElementById('export-dropdown').classList.remove('open'); window.print(); }
 
-  function exportCSV() {
-    document.getElementById('export-dropdown').classList.remove('open');
-    var MEMBROS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
-    var pagamentos = {};
-    MEMBROS.forEach(function(m){ pagamentos[m] = 0; });
-    lancamentos.filter(function(l){ return l.tipo === 'entrada'; }).forEach(function(l){ pagamentos[l.membro] = (pagamentos[l.membro]||0) + l.valor; });
-    var totalE = lancamentos.filter(function(l){ return l.tipo==='entrada'; }).reduce(function(a,l){ return a+l.valor; }, 0);
-    var totalG = lancamentos.filter(function(l){ return l.tipo==='gasto'; }).reduce(function(a,l){ return a+l.valor; }, 0);
-    var csv = 'ENTRADAS POR MEMBRO\nMembro,Total Pago (R$)\n';
-    Object.entries(pagamentos).sort(function(a,b){ return b[1]-a[1]; }).forEach(function(e){ csv += '"'+e[0]+'","'+e[1].toFixed(2).replace('.',',')+'"'+'\n'; });
-    csv += '\nGASTOS\nData,Conta,Valor (R$),Observação\n';
-    lancamentos.filter(function(l){ return l.tipo==='gasto'; }).forEach(function(l){ csv += '"'+fmtData(l.data)+'","'+l.conta+'","'+l.valor.toFixed(2).replace('.',',')+'","'+(l.obs||'')+'"\n'; });
-    csv += '\nTODAS AS ENTRADAS\nData,Membro,Valor (R$),Observação\n';
-    lancamentos.filter(function(l){ return l.tipo==='entrada'; }).forEach(function(l){ csv += '"'+fmtData(l.data)+'","'+l.membro+'","'+l.valor.toFixed(2).replace('.',',')+'","'+(l.obs||'')+'"\n'; });
-    csv += '\nSALDO\nTotal Entradas (R$),Total Gastos (R$),Saldo (R$)\n"'+totalE.toFixed(2).replace('.',',')+'"  ,"'+totalG.toFixed(2).replace('.',',')+'"  ,"'+(totalE-totalG).toFixed(2).replace('.',',')+'"  \n';
-    var blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    var mes = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-    a.href = url; a.download = 'tesouraria-bolhasdeluz-'+mes+'.csv'; a.click();
-    URL.revokeObjectURL(url);
-    showToast('CSV baixado ✓');
+  function abrirExportConfig() {
+    // Preenche de/até com o intervalo real dos dados
+    var datas = lancamentos.map(function(l){ return l.data || l.vencimento || ''; }).filter(Boolean).sort();
+    var agora = new Date();
+    var mesAtual = agora.getFullYear() + '-' + String(agora.getMonth()+1).padStart(2,'0');
+    document.getElementById('export-de').value = datas.length ? datas[0].slice(0,7) : mesAtual;
+    document.getElementById('export-ate').value = mesAtual;
+    atualizarPreviewExport();
+    document.getElementById('export-config-overlay').classList.add('open');
   }
 
-  function exportWhatsApp() {
-    document.getElementById('export-dropdown').classList.remove('open');
-    var MEMBROS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
-    var totalE = lancamentos.filter(function(l){ return l.tipo==='entrada'; }).reduce(function(a,l){ return a+l.valor; }, 0);
-    var totalG = lancamentos.filter(function(l){ return l.tipo==='gasto'; }).reduce(function(a,l){ return a+l.valor; }, 0);
-    var pagamentos = {};
-    MEMBROS.forEach(function(m){ pagamentos[m] = 0; });
-    lancamentos.filter(function(l){ return l.tipo==='entrada'; }).forEach(function(l){ if(pagamentos[l.membro]!==undefined) pagamentos[l.membro]+=l.valor; });
-    var contas = {};
-    lancamentos.filter(function(l){ return l.tipo==='gasto'; }).forEach(function(l){ contas[l.conta]=(contas[l.conta]||0)+l.valor; });
-    var dataHoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-    var msg = '🕯️ *TESOURARIA — BOLHAS DE LUZ*\n📅 '+dataHoje+'\n'+'─'.repeat(28)+'\n\n💚 *ENTRADAS POR MEMBRO*\n';
-    MEMBROS.forEach(function(m){ var v=pagamentos[m]||0; msg+=(v>0?'✅':'❌')+' '+m+(v>0?' — R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2}):'')+'\n'; });
-    if (Object.keys(contas).length) {
-      msg += '\n🧾 *GASTOS*\n';
-      Object.entries(contas).sort(function(a,b){ return b[1]-a[1]; }).forEach(function(e){ msg+='• '+e[0]+': R$ '+e[1].toLocaleString('pt-BR',{minimumFractionDigits:2})+'\n'; });
-    }
-    msg += '\n'+'─'.repeat(28)+'\n📥 Total entradas: *R$ '+totalE.toLocaleString('pt-BR',{minimumFractionDigits:2})+'*\n📤 Total gastos: *R$ '+totalG.toLocaleString('pt-BR',{minimumFractionDigits:2})+'*\n💰 Saldo: *R$ '+(totalE-totalG).toLocaleString('pt-BR',{minimumFractionDigits:2})+'*\n';
-    document.getElementById('wpp-preview').textContent = msg;
-    document.getElementById('wpp-copy-btn').textContent = 'Copiar Mensagem';
-    document.getElementById('wpp-overlay').classList.add('open');
+  function atualizarPreviewExport() {
+    var de = document.getElementById('export-de').value;
+    var ate = document.getElementById('export-ate').value;
+    if (!de || !ate) return;
+    var lista = lancamentosDoPeriodo(de, ate);
+    var nE = lista.filter(function(l){ return l.tipo==='entrada'; }).length;
+    var nG = lista.filter(function(l){ return l.tipo==='gasto'; }).length;
+    var nP = lista.filter(function(l){ return l.status==='pendente'; }).length;
+    var totalE = lista.filter(function(l){ return l.tipo==='entrada'; }).reduce(function(a,l){ return a+l.valor; },0);
+    var totalG = lista.filter(function(l){ return l.tipo==='gasto'; }).reduce(function(a,l){ return a+l.valor; },0);
+    document.getElementById('export-preview-count').innerHTML =
+      '<strong>' + nE + '</strong> entradas · <strong>' + nG + '</strong> gastos · <strong>' + nP + '</strong> pendentes<br>' +
+      'Entradas: <strong>' + fmt(totalE) + '</strong> · Gastos: <strong>' + fmt(totalG) + '</strong> · Saldo: <strong style="color:' + (totalE-totalG>=0?'var(--green)':'var(--red)') + '">' + fmt(totalE-totalG) + '</strong>';
   }
+
+  // Monitora mudanças nos campos de período
+  setTimeout(function(){
+    var de = document.getElementById('export-de');
+    var ate = document.getElementById('export-ate');
+    if (de) de.addEventListener('change', atualizarPreviewExport);
+    if (ate) ate.addEventListener('change', atualizarPreviewExport);
+  }, 500);
+
+  function lancamentosDoPeriodo(de, ate) {
+    return lancamentos.filter(function(l) {
+      var ref = (l.tipo==='entrada' && l.competencia) ? l.competencia
+        : (l.data ? l.data.slice(0,7) : (l.vencimento ? l.vencimento.slice(0,7) : ''));
+      if (!ref) return true;
+      return ref >= de && ref <= ate;
+    });
+  }
+
+  function fmtMesAno(ym) {
+    if (!ym) return '';
+    var p = ym.split('-');
+    return MESES_NOMES_FULL[parseInt(p[1])-1] + '/' + p[0];
+  }
+
+  function exportarPrestacao(formato) {
+    var de = document.getElementById('export-de').value;
+    var ate = document.getElementById('export-ate').value;
+    if (!de || !ate) { showToast('Informe o período'); return; }
+
+    var lista = lancamentosDoPeriodo(de, ate);
+    var entradas = lista.filter(function(l){ return l.tipo==='entrada'; });
+    var gastos   = lista.filter(function(l){ return l.tipo==='gasto' && l.status !== 'pendente'; });
+    var pendentes = lista.filter(function(l){ return l.status==='pendente'; });
+
+    var totalE = entradas.reduce(function(a,l){ return a+l.valor; },0);
+    var totalG = gastos.reduce(function(a,l){ return a+l.valor; },0);
+    var totalP = pendentes.reduce(function(a,l){ return a+l.valor; },0);
+    var saldo   = totalE - totalG;
+
+    var periodo = de===ate ? fmtMesAno(de) : fmtMesAno(de) + ' a ' + fmtMesAno(ate);
+
+    // Entradas agrupadas por membro
+    var porMembro = {};
+    entradas.forEach(function(l){
+      var chave = l.membro || '—';
+      if (!porMembro[chave]) porMembro[chave] = { total: 0, itens: [] };
+      porMembro[chave].total += l.valor;
+      porMembro[chave].itens.push(l);
+    });
+
+    // Gastos agrupados por conta
+    var porConta = {};
+    gastos.forEach(function(l){
+      var chave = l.conta || '—';
+      if (!porConta[chave]) porConta[chave] = { total: 0, itens: [] };
+      porConta[chave].total += l.valor;
+      porConta[chave].itens.push(l);
+    });
+
+    document.getElementById('export-config-overlay').classList.remove('open');
+
+    if (formato === 'pdf') {
+      // Gera HTML de impressão numa nova janela
+      var html = '<html><head><meta charset="UTF-8">';
+      html += '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">';
+      html += '<style>';
+      html += 'body{font-family:"DM Sans",sans-serif;color:#2a1a22;max-width:700px;margin:0 auto;padding:24px 20px;font-size:13px;}';
+      html += 'h1{font-family:"Cinzel",serif;font-size:1.1rem;font-weight:700;color:#c4396b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;}';
+      html += 'h2{font-family:"Cinzel",serif;font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c4396b;border-bottom:1px solid rgba(196,57,107,.2);padding-bottom:5px;margin:20px 0 8px;}';
+      html += 'h3{font-family:"Cinzel",serif;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(80,30,50,.5);margin:12px 0 5px;}';
+      html += '.sub{font-family:"DM Sans",sans-serif;font-size:.78rem;color:rgba(80,30,50,.5);margin-bottom:16px;}';
+      html += 'table{width:100%;border-collapse:collapse;margin-bottom:8px;}';
+      html += 'th{font-family:"Cinzel",serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(80,30,50,.5);text-align:left;padding:5px 8px;border-bottom:1.5px solid rgba(196,57,107,.15);}';
+      html += 'td{font-family:"Crimson Pro",serif;font-size:.88rem;padding:5px 8px;border-bottom:1px solid rgba(196,57,107,.07);}';
+      html += 'td.val{text-align:right;font-weight:600;}';
+      html += 'td.verde{color:#2a7a60;text-align:right;font-weight:600;}';
+      html += 'td.vermelho{color:#b84040;text-align:right;font-weight:600;}';
+      html += 'td.dim{color:rgba(80,30,50,.5);font-style:italic;}';
+      html += '.total-row td{font-weight:700;border-top:1.5px solid rgba(196,57,107,.2);border-bottom:none;font-family:"Cinzel",serif;font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;}';
+      html += '.saldo-box{background:rgba(196,57,107,.05);border:1px solid rgba(196,57,107,.2);border-radius:8px;padding:12px 16px;margin:16px 0;display:flex;justify-content:space-between;align-items:center;}';
+      html += '.saldo-box .label{font-family:"Cinzel",serif;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(80,30,50,.5);}';
+      html += '.saldo-box .valor{font-family:"Crimson Pro",serif;font-size:1.3rem;font-weight:600;}';
+      html += '.pend-badge{background:rgba(184,64,64,.1);color:#b84040;border-radius:4px;font-size:.65rem;padding:1px 5px;font-family:"Cinzel",serif;letter-spacing:.04em;}';
+      html += '@media print{body{padding:8px;}button{display:none!important;}}';
+      html += '</style></head><body>';
+
+      html += '<h1>Bolhas de Luz — Prestação de Contas</h1>';
+      html += '<div class="sub">Período: <strong>' + periodo + '</strong> · Gerado em ' + new Date().toLocaleDateString('pt-BR') + '</div>';
+
+      // Saldo resumido
+      html += '<div class="saldo-box"><div><div class="label">Entradas</div><div class="valor" style="color:#2a7a60">' + fmt(totalE) + '</div></div>';
+      html += '<div><div class="label">Gastos</div><div class="valor" style="color:#b84040">' + fmt(totalG) + '</div></div>';
+      html += '<div><div class="label">Saldo</div><div class="valor" style="color:' + (saldo>=0?'#2a7a60':'#b84040') + '">' + fmt(saldo) + '</div></div></div>';
+
+      // Entradas por membro
+      html += '<h2>Entradas por Membro</h2>';
+      html += '<table><tr><th>Membro</th><th>Competência</th><th>Data Pgto</th><th style="text-align:right">Valor</th></tr>';
+      var MEMBROS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
+      // Membros fixos primeiro, depois extras
+      var membrosOrdenados = Object.keys(porMembro).sort(function(a,b){
+        var ia = MEMBROS.indexOf(a), ib = MEMBROS.indexOf(b);
+        if (ia===-1 && ib===-1) return a.localeCompare(b);
+        if (ia===-1) return 1; if (ib===-1) return -1;
+        return ia - ib;
+      });
+      membrosOrdenados.forEach(function(m){
+        var g = porMembro[m];
+        g.itens.forEach(function(l, i){
+          html += '<tr>';
+          html += '<td>' + (i===0 ? m : '') + (l.subTipo==='extra' ? ' <span style="font-size:.65rem;background:#fffbe8;border:1px solid #e8d080;color:#8c5a00;border-radius:4px;padding:1px 5px;">✨ Extra</span>' : '') + '</td>';
+          html += '<td class="dim">' + (l.competencia ? fmtCompetencia(l.competencia) : '—') + '</td>';
+          html += '<td class="dim">' + fmtData(l.data) + '</td>';
+          html += '<td class="verde">' + fmt(l.valor) + '</td>';
+          html += '</tr>';
+        });
+        html += '<tr class="total-row"><td colspan="3">Total — ' + m + '</td><td class="verde" style="text-align:right">' + fmt(g.total) + '</td></tr>';
+      });
+      html += '<tr class="total-row"><td colspan="3">TOTAL ENTRADAS</td><td class="verde" style="text-align:right">' + fmt(totalE) + '</td></tr>';
+      html += '</table>';
+
+      // Gastos por conta
+      html += '<h2>Gastos por Conta</h2>';
+      html += '<table><tr><th>Conta</th><th>Data</th><th>Observação</th><th>Comprovante</th><th style="text-align:right">Valor</th></tr>';
+      Object.keys(porConta).sort().forEach(function(c){
+        var g = porConta[c];
+        g.itens.forEach(function(l, i){
+          html += '<tr>';
+          html += '<td>' + (i===0 ? c : '') + '</td>';
+          html += '<td class="dim">' + fmtData(l.data) + '</td>';
+          html += '<td class="dim">' + (l.obs||'—') + '</td>';
+          html += '<td class="dim">' + (l.comprovante ? '📎 '+l.comprovante : '—') + '</td>';
+          html += '<td class="vermelho">' + fmt(l.valor) + '</td>';
+          html += '</tr>';
+        });
+        html += '<tr class="total-row"><td colspan="4">Total — ' + c + '</td><td class="vermelho" style="text-align:right">' + fmt(g.total) + '</td></tr>';
+      });
+      html += '<tr class="total-row"><td colspan="4">TOTAL GASTOS</td><td class="vermelho" style="text-align:right">' + fmt(totalG) + '</td></tr>';
+      html += '</table>';
+
+      // Pendentes
+      if (pendentes.length) {
+        html += '<h2>Pendentes em Aberto</h2>';
+        html += '<table><tr><th>Conta</th><th>Vencimento</th><th>Observação</th><th style="text-align:right">Valor</th></tr>';
+        pendentes.forEach(function(l){
+          html += '<tr><td>' + l.conta + '</td><td class="dim">' + fmtData(l.vencimento||l.data) + '</td><td class="dim">' + (l.obs||'—') + '</td><td class="vermelho">' + fmt(l.valor) + '</td></tr>';
+        });
+        html += '<tr class="total-row"><td colspan="3">TOTAL PENDENTES</td><td class="vermelho" style="text-align:right">' + fmt(totalP) + '</td></tr>';
+        html += '</table>';
+      }
+
+      // Saldo final
+      html += '<h2>Resumo Final</h2>';
+      html += '<table><tr><th>Item</th><th style="text-align:right">Valor</th></tr>';
+      html += '<tr><td>Total Entradas</td><td class="verde">' + fmt(totalE) + '</td></tr>';
+      html += '<tr><td>Total Gastos</td><td class="vermelho">' + fmt(totalG) + '</td></tr>';
+      if (pendentes.length) html += '<tr><td>Total Pendentes (a pagar)</td><td class="vermelho">' + fmt(totalP) + '</td></tr>';
+      html += '<tr class="total-row"><td>SALDO DO PERÍODO</td><td style="text-align:right;color:' + (saldo>=0?'#2a7a60':'#b84040') + '">' + fmt(saldo) + '</td></tr>';
+      if (saldo < 0) html += '<tr><td colspan="2" style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:.82rem;color:rgba(80,30,50,.5);text-align:right;padding-top:6px;">coberto pela mãe de santo 🕯️</td></tr>';
+      html += '</table>';
+
+      html += '</body></html>';
+      var win = window.open('', '_blank');
+      win.document.write(html);
+      win.document.close();
+      setTimeout(function(){ win.print(); }, 600);
+
+    } else if (formato === 'csv') {
+      var rows = [];
+      rows.push(['BOLHAS DE LUZ — PRESTAÇÃO DE CONTAS']);
+      rows.push(['Período: ' + periodo]);
+      rows.push([]);
+      rows.push(['RESUMO']);
+      rows.push(['Total Entradas','Total Gastos','Total Pendentes','Saldo']);
+      rows.push([totalE.toFixed(2), totalG.toFixed(2), totalP.toFixed(2), saldo.toFixed(2)]);
+      rows.push([]);
+      rows.push(['ENTRADAS']);
+      rows.push(['Membro','Tipo','Data Pgto','Competência','Valor','Observação']);
+      entradas.forEach(function(l){
+        rows.push([l.membro||'—', l.subTipo==='extra'?'Extra':'Membro', fmtData(l.data), l.competencia?fmtCompetencia(l.competencia):'—', l.valor.toFixed(2), l.obs||'']);
+      });
+      rows.push(['','','','TOTAL',totalE.toFixed(2),'']);
+      rows.push([]);
+      rows.push(['GASTOS']);
+      rows.push(['Conta','Data','Observação','Comprovante','Valor']);
+      gastos.forEach(function(l){
+        rows.push([l.conta||'—', fmtData(l.data), l.obs||'', l.comprovante||'', l.valor.toFixed(2)]);
+      });
+      rows.push(['','','','TOTAL',totalG.toFixed(2)]);
+      if (pendentes.length) {
+        rows.push([]);
+        rows.push(['PENDENTES EM ABERTO']);
+        rows.push(['Conta','Vencimento','Observação','Comprovante','Valor']);
+        pendentes.forEach(function(l){
+          rows.push([l.conta||'—', fmtData(l.vencimento||l.data), l.obs||'', l.comprovante||'', l.valor.toFixed(2)]);
+        });
+        rows.push(['','','','TOTAL',totalP.toFixed(2)]);
+      }
+      var csv = '\uFEFF' + rows.map(function(r){
+        return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(',');
+      }).join('\n');
+      var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'prestacao-contas-bolhasdeluz-' + de + '-a-' + ate + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSV baixado ✓');
+
+    } else if (formato === 'wpp') {
+      var msg = '🕯️ *BOLHAS DE LUZ — PRESTAÇÃO DE CONTAS*\n';
+      msg += '📅 Período: ' + periodo + '\n';
+      msg += '─'.repeat(28) + '\n\n';
+
+      msg += '💰 *RESUMO*\n';
+      msg += '📥 Entradas: *' + fmt(totalE) + '*\n';
+      msg += '📤 Gastos: *' + fmt(totalG) + '*\n';
+      if (pendentes.length) msg += '🔴 Pendentes: *' + fmt(totalP) + '*\n';
+      msg += '💼 Saldo: *' + fmt(saldo) + '*\n';
+      if (saldo < 0) msg += '_coberto pela mãe de santo 🕯️_\n';
+      msg += '\n';
+
+      msg += '💚 *ENTRADAS POR MEMBRO*\n';
+      Object.keys(porMembro).sort().forEach(function(m){
+        msg += '• ' + m + ': ' + fmt(porMembro[m].total) + '\n';
+      });
+      msg += '\n';
+
+      msg += '🧾 *GASTOS POR CONTA*\n';
+      Object.keys(porConta).sort().forEach(function(c){
+        var g = porConta[c];
+        msg += '• ' + c + ': ' + fmt(g.total);
+        var comComprova = g.itens.filter(function(i){ return i.comprovante; }).length;
+        if (comComprova) msg += ' ('+comComprova+' comprovante'+( comComprova>1?'s':'')+')';
+        msg += '\n';
+      });
+
+      if (pendentes.length) {
+        msg += '\n🔴 *PENDENTES EM ABERTO*\n';
+        pendentes.forEach(function(l){
+          msg += '• ' + l.conta + ': ' + fmt(l.valor);
+          if (l.vencimento) msg += ' · vence ' + fmtData(l.vencimento);
+          msg += '\n';
+        });
+      }
+
+      document.getElementById('wpp-preview').textContent = msg;
+      document.getElementById('wpp-copy-btn').textContent = 'Copiar Mensagem';
+      document.getElementById('wpp-overlay').classList.add('open');
+    }
+  }
+
+  function exportCSV() { abrirExportConfig(); }
+  function exportWhatsApp() { abrirExportConfig(); }
 
   function copiarWpp() {
     var texto = document.getElementById('wpp-preview').textContent;
@@ -1356,7 +1600,16 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       <h1>🕯 Obrigação de Agosto</h1>
       <p>Bolhas de Luz — Controle Financeiro</p>
     </div>
-    <button class="ag-back" onclick="document.getElementById('agosto-modal').classList.remove('open')">✕ Fechar</button>
+    <div style="display:flex;gap:7px;align-items:center;position:relative;">
+      <button onclick="agToggleExport(event)" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);border-radius:20px;color:rgba(255,255,255,.9);font-family:'DM Sans',sans-serif;font-size:.72rem;padding:5px 11px;cursor:pointer;white-space:nowrap;">↑ Exportar</button>
+      <button class="ag-back" onclick="document.getElementById('agosto-modal').classList.remove('open')">✕ Fechar</button>
+      <!-- Dropdown exportar -->
+      <div id="ag-export-dd" style="display:none;position:absolute;top:38px;right:60px;background:#fff;border:1px solid rgba(196,57,107,.15);border-radius:10px;box-shadow:0 8px 32px rgba(196,57,107,.18);overflow:hidden;z-index:20;min-width:180px;">
+        <div onclick="agExportPDF()" style="display:flex;align-items:center;gap:9px;padding:12px 15px;cursor:pointer;border-bottom:1px solid rgba(196,57,107,.1);font-family:'DM Sans',sans-serif;font-size:.82rem;color:#2a1a22;">🖨️ <div><div style="font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;">PDF / Imprimir</div><div style="font-size:.65rem;color:rgba(80,30,50,.5);margin-top:1px;">Relatório completo</div></div></div>
+        <div onclick="agExportCSV()" style="display:flex;align-items:center;gap:9px;padding:12px 15px;cursor:pointer;border-bottom:1px solid rgba(196,57,107,.1);font-family:'DM Sans',sans-serif;font-size:.82rem;color:#2a1a22;">📊 <div><div style="font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;">Excel / CSV</div><div style="font-size:.65rem;color:rgba(80,30,50,.5);margin-top:1px;">Planilha de pagamentos</div></div></div>
+        <div onclick="agExportWpp()" style="display:flex;align-items:center;gap:9px;padding:12px 15px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.82rem;color:#2a1a22;">💬 <div><div style="font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;">WhatsApp</div><div style="font-size:.65rem;color:rgba(80,30,50,.5);margin-top:1px;">Resumo para copiar</div></div></div>
+      </div>
+    </div>
   </div>
 
   <!-- Saldo -->
@@ -1653,6 +1906,74 @@ function agRenderAves(){
   document.getElementById('ag-aves-totais').innerHTML='<div class="ag-aves-row"><span>Total galos</span><span style="color:rgba(80,30,50,.5);font-size:.76rem">'+tG+' × R$'+AG_PRECO_GALO+'</span><span class="ag-aves-val">'+agFmt(tG*AG_PRECO_GALO)+'</span></div>'
     +'<div class="ag-aves-row"><span>Total galinhas</span><span style="color:rgba(80,30,50,.5);font-size:.76rem">'+tH+' × R$'+AG_PRECO_GALINHA+'</span><span class="ag-aves-val">'+agFmt(tH*AG_PRECO_GALINHA)+'</span></div>'
     +'<div class="ag-aves-row" style="font-weight:700"><span>TOTAL AVES</span><span></span><span class="ag-aves-val">'+agFmt(tv)+'</span></div>';
+}
+
+// ── EXPORTAR AGOSTO ──────────────────────────────────────────
+function agToggleExport(e) {
+  e.stopPropagation();
+  var dd = document.getElementById('ag-export-dd');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(){ var dd=document.getElementById('ag-export-dd'); if(dd) dd.style.display='none'; });
+
+function agExportPDF() {
+  document.getElementById('ag-export-dd').style.display='none';
+  window.print();
+}
+
+function agExportCSV() {
+  document.getElementById('ag-export-dd').style.display='none';
+  var linhas = [['Nome','Galos','Galinhas','Valor Aves','Obrigação Total','Obrigação Paga','Aves Pagas','Total Pago','Total Devido','Situação']];
+  agPessoas.forEach(function(p) {
+    var pg=agPgtos[p.nome], tAves=agAvesVal(p), tDeve=AG_OBRIGACAO+tAves, tPago=pg.obr+pg.aves;
+    var sit=tPago>=tDeve?'Quitado':tPago>0?'Parcial':'Pendente';
+    linhas.push([p.nome,p.galos,p.galinhas,tAves.toFixed(2),AG_OBRIGACAO.toFixed(2),pg.obr.toFixed(2),pg.aves.toFixed(2),tPago.toFixed(2),tDeve.toFixed(2),sit]);
+  });
+  linhas.push([]);
+  linhas.push(['GASTOS','','','','','','','','','']);
+  linhas.push(['Descrição','Categoria','Data','Valor','','','','','','']);
+  agGastos.forEach(function(g){ linhas.push([g.desc,g.categoria,g.data||'',g.valor.toFixed(2),'','','','','','']); });
+  var totalE=agPessoas.reduce(function(s,p){var pg=agPgtos[p.nome];return s+pg.obr+pg.aves;},0);
+  var totalS=agGastos.reduce(function(s,g){return s+g.valor;},0);
+  linhas.push([]);
+  linhas.push(['Entradas','','','',totalE.toFixed(2),'','','','','']);
+  linhas.push(['Saídas','','','',totalS.toFixed(2),'','','','','']);
+  linhas.push(['Saldo','','','','',(totalE-totalS).toFixed(2),'','','','']);
+  var csv='\uFEFF'+linhas.map(function(l){return l.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download='obrigacao-agosto-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV baixado ✓');
+}
+
+function agExportWpp() {
+  document.getElementById('ag-export-dd').style.display='none';
+  var hoje=new Date().toLocaleDateString('pt-BR');
+  var totalE=agPessoas.reduce(function(s,p){var pg=agPgtos[p.nome];return s+pg.obr+pg.aves;},0);
+  var totalS=agGastos.reduce(function(s,g){return s+g.valor;},0);
+  var msg='🕯 *OBRIGAÇÃO DE AGOSTO — BOLHAS DE LUZ*\n📅 '+hoje+'\n'+'─'.repeat(28)+'\n\n';
+  msg+='💰 *SALDO*\n▸ Entradas: '+agFmt(totalE)+'\n▸ Saídas: '+agFmt(totalS)+'\n▸ Saldo: *'+agFmt(totalE-totalS)+'*\n\n';
+  msg+='👥 *PAGAMENTOS*\n';
+  agPessoas.forEach(function(p){
+    var pg=agPgtos[p.nome], tAves=agAvesVal(p), tDeve=AG_OBRIGACAO+tAves, tPago=pg.obr+pg.aves;
+    var icon=tPago>=tDeve?'✅':tPago>0?'🔶':'❌';
+    msg+=icon+' '+p.nome+': '+agFmt(tPago)+' / '+agFmt(tDeve);
+    if(tPago<tDeve) msg+=' (falta '+agFmt(tDeve-tPago)+')';
+    msg+='\n';
+  });
+  if(agGastos.length){
+    msg+='\n💸 *GASTOS*\n';
+    agGastos.forEach(function(g){ msg+='▸ '+g.desc+' — '+agFmt(g.valor)+(g.data?' ('+g.data+')':'')+'\n'; });
+  }
+  var totalOrc=agCats.reduce(function(s,c){return s+c.itens.reduce(function(ss,i){return ss+i.val;},0);},0);
+  msg+='\n📋 *ORÇAMENTO TOTAL: '+agFmt(totalOrc)+'*\n';
+
+  // Mostra no modal WPP da tesouraria (reutiliza)
+  document.getElementById('wpp-preview').textContent = msg;
+  document.getElementById('wpp-copy-btn').textContent = 'Copiar Mensagem';
+  document.getElementById('wpp-overlay').classList.add('open');
 }
 
 // ── TABS ─────────────────────────────────────────────────────
