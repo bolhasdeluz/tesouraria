@@ -1744,6 +1744,18 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
         <span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2a1a22;">💬 WhatsApp — Agosto</span>
         <button onclick="document.getElementById('ag-wpp-modal').style.display='none';" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:rgba(80,30,50,.5);">✕</button>
       </div>
+      <!-- Toggle privacidade -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid rgba(196,57,107,.07);background:rgba(196,57,107,.03);">
+        <div>
+          <span style="font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2a1a22;">🔒 Modo Privacidade</span>
+          <span style="font-family:'DM Sans',sans-serif;font-size:.68rem;color:rgba(80,30,50,.5);margin-left:6px;">ocultar nomes</span>
+        </div>
+        <label style="position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0;">
+          <input type="checkbox" id="ag-wpp-privacidade" style="opacity:0;width:0;height:0;">
+          <span onclick="agTogglePriv()" id="ag-priv-track" style="position:absolute;cursor:pointer;inset:0;background:rgba(196,57,107,.15);border-radius:24px;transition:.3s;"></span>
+          <span id="ag-priv-thumb" style="position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.2);"></span>
+        </label>
+      </div>
       <div style="padding:14px 18px;overflow-y:auto;flex:1;">
         <div id="ag-wpp-text" style="background:#e8f5e9;border-radius:10px;padding:14px 16px;font-family:'DM Sans',sans-serif;font-size:.85rem;line-height:1.6;color:#1a3a1a;white-space:pre-wrap;word-break:break-word;border:1px solid #c8e6c9;"></div>
         <button id="ag-wpp-copy-btn" onclick="agCopiarWpp()" style="margin-top:12px;background:#25d366;border:none;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.08em;font-weight:700;padding:13px;cursor:pointer;width:100%;text-transform:uppercase;">Copiar Mensagem</button>
@@ -2023,32 +2035,64 @@ function agExportCSV() {
   showToast('CSV baixado ✓');
 }
 
-function agExportWpp() {
-  document.getElementById('ag-export-dd').style.display='none';
+var agPrivAtivo = false;
+
+function agTogglePriv() {
+  agPrivAtivo = !agPrivAtivo;
+  document.getElementById('ag-priv-track').style.background = agPrivAtivo ? '#c4396b' : 'rgba(196,57,107,.15)';
+  document.getElementById('ag-priv-thumb').style.left = agPrivAtivo ? '21px' : '3px';
+  agGerarMsgWpp();
+}
+
+function agGerarMsgWpp() {
   var hoje=new Date().toLocaleDateString('pt-BR');
   var totalE=agPessoas.reduce(function(s,p){var pg=agPgtos[p.nome];return s+pg.obr+pg.aves;},0);
   var totalS=agGastos.reduce(function(s,g){return s+g.valor;},0);
-  var msg='🕯 *OBRIGAÇÃO DE AGOSTO — BOLHAS DE LUZ*\n📅 '+hoje+'\n'+'─'.repeat(28)+'\n\n';
+  var msg='🕯 *OBRIGAÇÃO DE AGOSTO — BOLHAS DE LUZ*'+(agPrivAtivo?' 🔒':'')+'\n📅 '+hoje+'\n'+'─'.repeat(28)+'\n\n';
   msg+='💰 *SALDO*\n▸ Entradas: '+agFmt(totalE)+'\n▸ Saídas: '+agFmt(totalS)+'\n▸ Saldo: *'+agFmt(totalE-totalS)+'*\n\n';
-  msg+='👥 *PAGAMENTOS*\n';
-  agPessoas.forEach(function(p){
-    var pg=agPgtos[p.nome], tAves=agAvesVal(p), tDeve=AG_OBRIGACAO+tAves, tPago=pg.obr+pg.aves;
-    var icon=tPago>=tDeve?'✅':tPago>0?'🔶':'❌';
-    msg+=icon+' '+p.nome+': '+agFmt(tPago)+' / '+agFmt(tDeve);
-    if(tPago<tDeve) msg+=' (falta '+agFmt(tDeve-tPago)+')';
+
+  if (agPrivAtivo) {
+    msg+='👥 *PAGAMENTOS*\n';
+    var quitados=0, parciais=0, pendentes=0;
+    agPessoas.forEach(function(p){
+      var pg=agPgtos[p.nome], tAves=agAvesVal(p), tDeve=AG_OBRIGACAO+tAves, tPago=pg.obr+pg.aves;
+      if(tPago>=tDeve) quitados++; else if(tPago>0) parciais++; else pendentes++;
+    });
+    msg+='✅ Quitados: '+quitados+'\n';
+    msg+='🔶 Parciais: '+parciais+'\n';
+    msg+='❌ Pendentes: '+pendentes+'\n';
+    msg+='▸ _Total recebido: '+agFmt(totalE)+'_\n\n';
+  } else {
+    msg+='👥 *PAGAMENTOS*\n';
+    agPessoas.forEach(function(p){
+      var pg=agPgtos[p.nome], tAves=agAvesVal(p), tDeve=AG_OBRIGACAO+tAves, tPago=pg.obr+pg.aves;
+      var icon=tPago>=tDeve?'✅':tPago>0?'🔶':'❌';
+      msg+=icon+' '+p.nome+': '+agFmt(tPago)+' / '+agFmt(tDeve);
+      if(tPago<tDeve) msg+=' (falta '+agFmt(tDeve-tPago)+')';
+      msg+='\n';
+    });
     msg+='\n';
-  });
+  }
+
   if(agGastos.length){
-    msg+='\n💸 *GASTOS*\n';
+    msg+='💸 *GASTOS*\n';
     agGastos.forEach(function(g){ msg+='▸ '+g.desc+' — '+agFmt(g.valor)+(g.data?' ('+g.data+')':'')+'\n'; });
+    msg+='\n';
   }
   var totalOrc=agCats.reduce(function(s,c){return s+c.itens.reduce(function(ss,i){return ss+i.val;},0);},0);
-  msg+='\n📋 *ORÇAMENTO TOTAL: '+agFmt(totalOrc)+'*\n';
-
+  msg+='📋 *ORÇAMENTO TOTAL: '+agFmt(totalOrc)+'*\n';
   document.getElementById('ag-wpp-text').textContent = msg;
+}
+
+function agExportWpp() {
+  document.getElementById('ag-export-dd').style.display='none';
+  // Reset privacidade ao abrir
+  agPrivAtivo = false;
+  document.getElementById('ag-priv-track').style.background = 'rgba(196,57,107,.15)';
+  document.getElementById('ag-priv-thumb').style.left = '3px';
   document.getElementById('ag-wpp-copy-btn').textContent = 'Copiar Mensagem';
-  var modal = document.getElementById('ag-wpp-modal');
-  modal.style.display = 'flex';
+  agGerarMsgWpp();
+  document.getElementById('ag-wpp-modal').style.display = 'flex';
 }
 
 function agCopiarWpp() {
