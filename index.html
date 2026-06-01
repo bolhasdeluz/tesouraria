@@ -1736,6 +1736,20 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   </div>
 
   <div style="height:40px;"></div>
+
+  <!-- Modal WPP próprio do Agosto -->
+  <div id="ag-wpp-modal" style="display:none;position:fixed;inset:0;background:rgba(40,10,20,.6);backdrop-filter:blur(4px);z-index:600;align-items:flex-end;justify-content:center;">
+    <div style="background:#fff;border:1px solid rgba(196,57,107,.15);border-top:3px solid #c4396b;border-radius:16px 16px 0 0;width:100%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1) both;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid rgba(196,57,107,.1);">
+        <span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2a1a22;">💬 WhatsApp — Agosto</span>
+        <button onclick="document.getElementById('ag-wpp-modal').style.display='none';" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:rgba(80,30,50,.5);">✕</button>
+      </div>
+      <div style="padding:14px 18px;overflow-y:auto;flex:1;">
+        <div id="ag-wpp-text" style="background:#e8f5e9;border-radius:10px;padding:14px 16px;font-family:'DM Sans',sans-serif;font-size:.85rem;line-height:1.6;color:#1a3a1a;white-space:pre-wrap;word-break:break-word;border:1px solid #c8e6c9;"></div>
+        <button id="ag-wpp-copy-btn" onclick="agCopiarWpp()" style="margin-top:12px;background:#25d366;border:none;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.08em;font-weight:700;padding:13px;cursor:pointer;width:100%;text-transform:uppercase;">Copiar Mensagem</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Modal gasto Agosto -->
@@ -2031,10 +2045,26 @@ function agExportWpp() {
   var totalOrc=agCats.reduce(function(s,c){return s+c.itens.reduce(function(ss,i){return ss+i.val;},0);},0);
   msg+='\n📋 *ORÇAMENTO TOTAL: '+agFmt(totalOrc)+'*\n';
 
-  // Mostra no modal WPP da tesouraria (reutiliza)
-  document.getElementById('wpp-preview').textContent = msg;
-  document.getElementById('wpp-copy-btn').textContent = 'Copiar Mensagem';
-  document.getElementById('wpp-overlay').classList.add('open');
+  document.getElementById('ag-wpp-text').textContent = msg;
+  document.getElementById('ag-wpp-copy-btn').textContent = 'Copiar Mensagem';
+  var modal = document.getElementById('ag-wpp-modal');
+  modal.style.display = 'flex';
+}
+
+function agCopiarWpp() {
+  var texto = document.getElementById('ag-wpp-text').textContent;
+  var btn = document.getElementById('ag-wpp-copy-btn');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(texto).then(function(){
+      btn.textContent = '✓ Copiado!';
+      setTimeout(function(){ btn.textContent = 'Copiar Mensagem'; }, 2000);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = texto; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    btn.textContent = '✓ Copiado!';
+    setTimeout(function(){ btn.textContent = 'Copiar Mensagem'; }, 2000);
+  }
 }
 
 // ── TABS ─────────────────────────────────────────────────────
