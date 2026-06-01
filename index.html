@@ -1147,9 +1147,9 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       porConta[chave].itens.push(l);
     });
 
-    document.getElementById('export-config-overlay').classList.remove('open');
-
     var privado = isPrivacidade();
+
+    document.getElementById('export-config-overlay').classList.remove('open');
 
     if (formato === 'pdf') {
       var html = '<html><head><meta charset="UTF-8">';
