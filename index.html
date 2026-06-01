@@ -262,6 +262,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
         <div class="saldo-mini"><div class="saldo-mini-label">↓ Gastos</div><div class="saldo-mini-val" id="total-gastos-display">R$ 0,00</div></div>
       </div>
     </div>
+    <div id="saldo-nota-mae" style="display:none;text-align:right;margin-top:-8px;margin-bottom:6px;padding-right:4px;font-family:'Crimson Pro',serif;font-style:italic;font-size:.78rem;color:var(--text-dim);">coberto pela mãe de santo 🕯️</div>
     <div class="section-header"><div class="section-title" id="lancamentos-label">Últimos lançamentos</div></div>
     <div id="lista-recente"></div>
   </div>
@@ -726,11 +727,16 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   }
 
   function lancamentosDoMes(mes) {
-    // mes = 'YYYY-MM' ou null (todos)
     if (!mes) return lancamentos;
     return lancamentos.filter(function(l) {
-      // Para entradas com competência, usa competência; senão usa data
-      var ref = (l.tipo === 'entrada' && l.competencia) ? l.competencia : (l.data ? l.data.slice(0, 7) : '');
+      // Pendentes sem data: sempre mostrar
+      if (l.status === 'pendente' && !l.data && !l.vencimento) return true;
+      // Entradas: usa competência se preenchida, senão data
+      var ref = (l.tipo === 'entrada' && l.competencia)
+        ? l.competencia
+        : (l.data ? l.data.slice(0, 7) : (l.vencimento ? l.vencimento.slice(0, 7) : ''));
+      // Se não tem referência de data, inclui no mês atual para não sumir
+      if (!ref) return true;
       return ref === mes;
     });
   }
