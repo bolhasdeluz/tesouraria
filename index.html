@@ -272,7 +272,15 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     <div class="form-card">
       <div class="form-card-bar entrada"><span class="form-card-icon">💚</span><span class="form-card-title">Registrar Entrada</span></div>
       <div class="form-body">
-        <div class="field"><label class="field-label">Membro</label>
+
+        <!-- Toggle Membro / Extra -->
+        <div style="display:flex;gap:6px;">
+          <button id="toggle-membro" onclick="setEntradaTipo('membro')" style="flex:1;background:var(--green);border:none;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.07em;padding:9px;cursor:pointer;transition:all .2s;">👥 Membro</button>
+          <button id="toggle-extra" onclick="setEntradaTipo('extra')" style="flex:1;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.07em;padding:9px;cursor:pointer;transition:all .2s;">✨ Extra</button>
+        </div>
+
+        <!-- Campo membro -->
+        <div id="campo-membro" class="field"><label class="field-label">Membro</label>
           <select id="entrada-membro">
             <option value="">Selecionar membro…</option>
             <option>Ness</option><option>Thali</option><option>Jaque</option><option>Tassi</option>
@@ -280,6 +288,12 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
             <option>Juliana</option><option>Gabi</option><option>Márcia</option><option>Nicole</option><option>Stephani</option>
           </select>
         </div>
+
+        <!-- Campo extra -->
+        <div id="campo-extra" class="field" style="display:none;"><label class="field-label">Descrição</label>
+          <input type="text" id="entrada-extra-desc" placeholder="Ex: Doação, Rifa, Venda de vela…">
+        </div>
+
         <div class="field-row">
           <div class="field"><label class="field-label">Valor (R$)</label><input type="number" id="entrada-valor" placeholder="0,00" min="0" step="0.01"></div>
           <div class="field"><label class="field-label">Data pagamento</label><input type="date" id="entrada-data"></div>
@@ -591,17 +605,52 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   }
 
   // ── ENTRADA ───────────────────────────────────────────────
+  var entradaTipo = 'membro';
+
+  function setEntradaTipo(tipo) {
+    entradaTipo = tipo;
+    var isMembro = tipo === 'membro';
+    document.getElementById('campo-membro').style.display = isMembro ? 'flex' : 'none';
+    document.getElementById('campo-membro').style.flexDirection = 'column';
+    document.getElementById('campo-membro').style.gap = '5px';
+    document.getElementById('campo-extra').style.display = isMembro ? 'none' : 'flex';
+    document.getElementById('campo-extra').style.flexDirection = 'column';
+    document.getElementById('campo-extra').style.gap = '5px';
+    var btnM = document.getElementById('toggle-membro');
+    var btnE = document.getElementById('toggle-extra');
+    btnM.style.background = isMembro ? 'var(--green)' : 'none';
+    btnM.style.color = isMembro ? '#fff' : 'var(--text-dim)';
+    btnM.style.border = isMembro ? 'none' : '1px solid var(--border)';
+    btnE.style.background = isMembro ? 'none' : 'var(--green)';
+    btnE.style.color = isMembro ? 'var(--text-dim)' : '#fff';
+    btnE.style.border = isMembro ? '1px solid var(--border)' : 'none';
+  }
+
   function salvarEntrada() {
-    var membro = document.getElementById('entrada-membro').value;
     var valor = parseFloat(document.getElementById('entrada-valor').value);
     var data = document.getElementById('entrada-data').value;
     var obs = document.getElementById('entrada-obs').value.trim();
     var competencia = document.getElementById('entrada-competencia').value;
-    if (!membro) { showToast('Selecione um membro'); return; }
     if (!valor || valor <= 0) { showToast('Informe o valor'); return; }
-    lancamentos.unshift({ id: Date.now(), tipo: 'entrada', membro: membro, valor: valor, data: data, obs: obs, competencia: competencia });
+
+    var obj = { id: Date.now(), tipo: 'entrada', valor: valor, data: data, obs: obs, competencia: competencia };
+
+    if (entradaTipo === 'membro') {
+      var membro = document.getElementById('entrada-membro').value;
+      if (!membro) { showToast('Selecione um membro'); return; }
+      obj.membro = membro;
+      obj.subTipo = 'membro';
+    } else {
+      var desc = document.getElementById('entrada-extra-desc').value.trim();
+      if (!desc) { showToast('Descreva a entrada'); return; }
+      obj.membro = desc;
+      obj.subTipo = 'extra';
+    }
+
+    lancamentos.unshift(obj);
     save();
     document.getElementById('entrada-membro').value = '';
+    document.getElementById('entrada-extra-desc').value = '';
     document.getElementById('entrada-valor').value = '';
     document.getElementById('entrada-obs').value = '';
     document.getElementById('entrada-data').value = today();
@@ -656,7 +705,9 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     var isEntrada = l.tipo === 'entrada';
     var nome = isEntrada ? l.membro : l.conta;
     var badge = isEntrada
-      ? '<span class="cat-badge verde">Entrada</span>'
+      ? (l.subTipo === 'extra'
+          ? '<span class="cat-badge" style="background:linear-gradient(135deg,#fffbe8,#fff5d0);color:#8c5a00;border:1px solid #e8d080;">✨ Extra</span>'
+          : '<span class="cat-badge verde">Entrada</span>')
       : '<span class="cat-badge">' + l.conta + '</span>';
     var comp = l.comprovante ? '<div class="lancamento-comprovante">📎 ' + l.comprovante + '</div>' : '';
     var obs = l.obs ? '<div class="lancamento-obs">' + l.obs + '</div>' : '';
