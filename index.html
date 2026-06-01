@@ -552,9 +552,23 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     </div>
     <div class="modal-body">
       <div class="field-row">
-        <div class="field"><label class="field-label">De</label><input type="month" id="export-de"></div>
-        <div class="field"><label class="field-label">Até</label><input type="month" id="export-ate"></div>
+        <div class="field"><label class="field-label">De</label><input type="month" id="export-de" onchange="atualizarPreviewExport()"></div>
+        <div class="field"><label class="field-label">Até</label><input type="month" id="export-ate" onchange="atualizarPreviewExport()"></div>
       </div>
+
+      <!-- Toggle privacidade -->
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+        <div>
+          <div style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text);">🔒 Modo Privacidade</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:.72rem;color:var(--text-dim);margin-top:2px;">Entradas sem nomear — só totais</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0;">
+          <input type="checkbox" id="export-privacidade" style="opacity:0;width:0;height:0;">
+          <span onclick="togglePrivacidade()" id="privacy-toggle-track" style="position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:24px;transition:.3s;"></span>
+          <span id="privacy-toggle-thumb" style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.2);"></span>
+        </label>
+      </div>
+
       <div style="background:var(--gold-dim);border:1px solid var(--border);border-radius:8px;padding:10px 13px;">
         <div id="export-preview-count" style="font-family:'DM Sans',sans-serif;font-size:.8rem;color:var(--text-dim);"></div>
       </div>
@@ -1029,14 +1043,35 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   function exportPrint() { document.getElementById('export-dropdown').classList.remove('open'); window.print(); }
 
   function abrirExportConfig() {
-    // Preenche de/até com o intervalo real dos dados
     var datas = lancamentos.map(function(l){ return l.data || l.vencimento || ''; }).filter(Boolean).sort();
     var agora = new Date();
     var mesAtual = agora.getFullYear() + '-' + String(agora.getMonth()+1).padStart(2,'0');
-    document.getElementById('export-de').value = datas.length ? datas[0].slice(0,7) : mesAtual;
+    document.getElementById('export-de').value = datas.length ? datas[datas.length-1].slice(0,7) : mesAtual;
     document.getElementById('export-ate').value = mesAtual;
+    // Reset privacidade
+    document.getElementById('export-privacidade').checked = false;
+    document.getElementById('privacy-toggle-track').style.background = 'var(--border)';
+    document.getElementById('privacy-toggle-thumb').style.left = '3px';
     atualizarPreviewExport();
     document.getElementById('export-config-overlay').classList.add('open');
+  }
+
+  function togglePrivacidade() {
+    var cb = document.getElementById('export-privacidade');
+    cb.checked = !cb.checked;
+    var track = document.getElementById('privacy-toggle-track');
+    var thumb = document.getElementById('privacy-toggle-thumb');
+    if (cb.checked) {
+      track.style.background = 'var(--gold)';
+      thumb.style.left = '21px';
+    } else {
+      track.style.background = 'var(--border)';
+      thumb.style.left = '3px';
+    }
+  }
+
+  function isPrivacidade() {
+    return document.getElementById('export-privacidade').checked;
   }
 
   function atualizarPreviewExport() {
@@ -1114,15 +1149,15 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
     document.getElementById('export-config-overlay').classList.remove('open');
 
+    var privado = isPrivacidade();
+
     if (formato === 'pdf') {
-      // Gera HTML de impressão numa nova janela
       var html = '<html><head><meta charset="UTF-8">';
       html += '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">';
       html += '<style>';
       html += 'body{font-family:"DM Sans",sans-serif;color:#2a1a22;max-width:700px;margin:0 auto;padding:24px 20px;font-size:13px;}';
       html += 'h1{font-family:"Cinzel",serif;font-size:1.1rem;font-weight:700;color:#c4396b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;}';
       html += 'h2{font-family:"Cinzel",serif;font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c4396b;border-bottom:1px solid rgba(196,57,107,.2);padding-bottom:5px;margin:20px 0 8px;}';
-      html += 'h3{font-family:"Cinzel",serif;font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(80,30,50,.5);margin:12px 0 5px;}';
       html += '.sub{font-family:"DM Sans",sans-serif;font-size:.78rem;color:rgba(80,30,50,.5);margin-bottom:16px;}';
       html += 'table{width:100%;border-collapse:collapse;margin-bottom:8px;}';
       html += 'th{font-family:"Cinzel",serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(80,30,50,.5);text-align:left;padding:5px 8px;border-bottom:1.5px solid rgba(196,57,107,.15);}';
@@ -1135,85 +1170,89 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       html += '.saldo-box{background:rgba(196,57,107,.05);border:1px solid rgba(196,57,107,.2);border-radius:8px;padding:12px 16px;margin:16px 0;display:flex;justify-content:space-between;align-items:center;}';
       html += '.saldo-box .label{font-family:"Cinzel",serif;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(80,30,50,.5);}';
       html += '.saldo-box .valor{font-family:"Crimson Pro",serif;font-size:1.3rem;font-weight:600;}';
-      html += '.pend-badge{background:rgba(184,64,64,.1);color:#b84040;border-radius:4px;font-size:.65rem;padding:1px 5px;font-family:"Cinzel",serif;letter-spacing:.04em;}';
+      html += '.priv-notice{background:#fffbe8;border:1px solid #e8d080;border-radius:6px;padding:6px 12px;font-family:"DM Sans",sans-serif;font-size:.72rem;color:#8c5a00;margin-bottom:12px;}';
       html += '@media print{body{padding:8px;}button{display:none!important;}}';
       html += '</style></head><body>';
 
       html += '<h1>Bolhas de Luz — Prestação de Contas</h1>';
-      html += '<div class="sub">Período: <strong>' + periodo + '</strong> · Gerado em ' + new Date().toLocaleDateString('pt-BR') + '</div>';
+      html += '<div class="sub">Período: <strong>' + periodo + '</strong> · Gerado em ' + new Date().toLocaleDateString('pt-BR') + (privado ? ' · <strong>🔒 Modo Privacidade</strong>' : '') + '</div>';
 
-      // Saldo resumido
+      if (privado) html += '<div class="priv-notice">🔒 Relatório em modo privacidade — entradas exibidas sem identificação individual.</div>';
+
       html += '<div class="saldo-box"><div><div class="label">Entradas</div><div class="valor" style="color:#2a7a60">' + fmt(totalE) + '</div></div>';
       html += '<div><div class="label">Gastos</div><div class="valor" style="color:#b84040">' + fmt(totalG) + '</div></div>';
       html += '<div><div class="label">Saldo</div><div class="valor" style="color:' + (saldo>=0?'#2a7a60':'#b84040') + '">' + fmt(saldo) + '</div></div></div>';
 
-      // Entradas por membro
-      html += '<h2>Entradas por Membro</h2>';
-      html += '<table><tr><th>Membro</th><th>Competência</th><th>Data Pgto</th><th style="text-align:right">Valor</th></tr>';
-      var MEMBROS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
-      // Membros fixos primeiro, depois extras
-      var membrosOrdenados = Object.keys(porMembro).sort(function(a,b){
-        var ia = MEMBROS.indexOf(a), ib = MEMBROS.indexOf(b);
-        if (ia===-1 && ib===-1) return a.localeCompare(b);
-        if (ia===-1) return 1; if (ib===-1) return -1;
-        return ia - ib;
-      });
-      membrosOrdenados.forEach(function(m){
-        var g = porMembro[m];
-        g.itens.forEach(function(l, i){
-          html += '<tr>';
-          html += '<td>' + (i===0 ? m : '') + (l.subTipo==='extra' ? ' <span style="font-size:.65rem;background:#fffbe8;border:1px solid #e8d080;color:#8c5a00;border-radius:4px;padding:1px 5px;">✨ Extra</span>' : '') + '</td>';
-          html += '<td class="dim">' + (l.competencia ? fmtCompetencia(l.competencia) : '—') + '</td>';
-          html += '<td class="dim">' + fmtData(l.data) + '</td>';
-          html += '<td class="verde">' + fmt(l.valor) + '</td>';
-          html += '</tr>';
+      // Entradas
+      html += '<h2>Entradas</h2>';
+      if (privado) {
+        // Modo privacidade: só totais por mês
+        var porMes = {};
+        entradas.forEach(function(l){
+          var ref = (l.competencia || (l.data ? l.data.slice(0,7) : '')) || '—';
+          porMes[ref] = (porMes[ref]||0) + l.valor;
         });
-        html += '<tr class="total-row"><td colspan="3">Total — ' + m + '</td><td class="verde" style="text-align:right">' + fmt(g.total) + '</td></tr>';
-      });
-      html += '<tr class="total-row"><td colspan="3">TOTAL ENTRADAS</td><td class="verde" style="text-align:right">' + fmt(totalE) + '</td></tr>';
-      html += '</table>';
+        html += '<table><tr><th>Mês</th><th style="text-align:right">Total Recebido</th></tr>';
+        Object.keys(porMes).sort().forEach(function(m){
+          html += '<tr><td>' + fmtMesAno(m) + '</td><td class="verde">' + fmt(porMes[m]) + '</td></tr>';
+        });
+        html += '<tr class="total-row"><td>TOTAL ENTRADAS</td><td class="verde" style="text-align:right">' + fmt(totalE) + '</td></tr>';
+        html += '</table>';
+      } else {
+        html += '<table><tr><th>Membro</th><th>Competência</th><th>Data Pgto</th><th style="text-align:right">Valor</th></tr>';
+        var MEMBROS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
+        var membrosOrdenados = Object.keys(porMembro).sort(function(a,b){
+          var ia=MEMBROS.indexOf(a), ib=MEMBROS.indexOf(b);
+          if(ia===-1&&ib===-1) return a.localeCompare(b);
+          if(ia===-1) return 1; if(ib===-1) return -1;
+          return ia-ib;
+        });
+        membrosOrdenados.forEach(function(m){
+          var g=porMembro[m];
+          g.itens.forEach(function(l,i){
+            html += '<tr><td>'+(i===0?m:'')+(l.subTipo==='extra'?' <span style="font-size:.65rem;background:#fffbe8;border:1px solid #e8d080;color:#8c5a00;border-radius:4px;padding:1px 5px;">✨ Extra</span>':'')+'</td>';
+            html += '<td class="dim">'+(l.competencia?fmtCompetencia(l.competencia):'—')+'</td>';
+            html += '<td class="dim">'+fmtData(l.data)+'</td>';
+            html += '<td class="verde">'+fmt(l.valor)+'</td></tr>';
+          });
+          html += '<tr class="total-row"><td colspan="3">Total — '+m+'</td><td class="verde" style="text-align:right">'+fmt(g.total)+'</td></tr>';
+        });
+        html += '<tr class="total-row"><td colspan="3">TOTAL ENTRADAS</td><td class="verde" style="text-align:right">'+fmt(totalE)+'</td></tr>';
+        html += '</table>';
+      }
 
-      // Gastos por conta
+      // Gastos (sempre completo)
       html += '<h2>Gastos por Conta</h2>';
       html += '<table><tr><th>Conta</th><th>Data</th><th>Observação</th><th>Comprovante</th><th style="text-align:right">Valor</th></tr>';
       Object.keys(porConta).sort().forEach(function(c){
-        var g = porConta[c];
-        g.itens.forEach(function(l, i){
-          html += '<tr>';
-          html += '<td>' + (i===0 ? c : '') + '</td>';
-          html += '<td class="dim">' + fmtData(l.data) + '</td>';
-          html += '<td class="dim">' + (l.obs||'—') + '</td>';
-          html += '<td class="dim">' + (l.comprovante ? '📎 '+l.comprovante : '—') + '</td>';
-          html += '<td class="vermelho">' + fmt(l.valor) + '</td>';
-          html += '</tr>';
+        var g=porConta[c];
+        g.itens.forEach(function(l,i){
+          html += '<tr><td>'+(i===0?c:'')+'</td><td class="dim">'+fmtData(l.data)+'</td><td class="dim">'+(l.obs||'—')+'</td><td class="dim">'+(l.comprovante?'📎 '+l.comprovante:'—')+'</td><td class="vermelho">'+fmt(l.valor)+'</td></tr>';
         });
-        html += '<tr class="total-row"><td colspan="4">Total — ' + c + '</td><td class="vermelho" style="text-align:right">' + fmt(g.total) + '</td></tr>';
+        html += '<tr class="total-row"><td colspan="4">Total — '+c+'</td><td class="vermelho" style="text-align:right">'+fmt(g.total)+'</td></tr>';
       });
-      html += '<tr class="total-row"><td colspan="4">TOTAL GASTOS</td><td class="vermelho" style="text-align:right">' + fmt(totalG) + '</td></tr>';
+      html += '<tr class="total-row"><td colspan="4">TOTAL GASTOS</td><td class="vermelho" style="text-align:right">'+fmt(totalG)+'</td></tr>';
       html += '</table>';
 
-      // Pendentes
       if (pendentes.length) {
         html += '<h2>Pendentes em Aberto</h2>';
         html += '<table><tr><th>Conta</th><th>Vencimento</th><th>Observação</th><th style="text-align:right">Valor</th></tr>';
         pendentes.forEach(function(l){
-          html += '<tr><td>' + l.conta + '</td><td class="dim">' + fmtData(l.vencimento||l.data) + '</td><td class="dim">' + (l.obs||'—') + '</td><td class="vermelho">' + fmt(l.valor) + '</td></tr>';
+          html += '<tr><td>'+l.conta+'</td><td class="dim">'+fmtData(l.vencimento||l.data)+'</td><td class="dim">'+(l.obs||'—')+'</td><td class="vermelho">'+fmt(l.valor)+'</td></tr>';
         });
-        html += '<tr class="total-row"><td colspan="3">TOTAL PENDENTES</td><td class="vermelho" style="text-align:right">' + fmt(totalP) + '</td></tr>';
+        html += '<tr class="total-row"><td colspan="3">TOTAL PENDENTES</td><td class="vermelho" style="text-align:right">'+fmt(totalP)+'</td></tr>';
         html += '</table>';
       }
 
-      // Saldo final
       html += '<h2>Resumo Final</h2>';
       html += '<table><tr><th>Item</th><th style="text-align:right">Valor</th></tr>';
-      html += '<tr><td>Total Entradas</td><td class="verde">' + fmt(totalE) + '</td></tr>';
-      html += '<tr><td>Total Gastos</td><td class="vermelho">' + fmt(totalG) + '</td></tr>';
-      if (pendentes.length) html += '<tr><td>Total Pendentes (a pagar)</td><td class="vermelho">' + fmt(totalP) + '</td></tr>';
-      html += '<tr class="total-row"><td>SALDO DO PERÍODO</td><td style="text-align:right;color:' + (saldo>=0?'#2a7a60':'#b84040') + '">' + fmt(saldo) + '</td></tr>';
-      if (saldo < 0) html += '<tr><td colspan="2" style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:.82rem;color:rgba(80,30,50,.5);text-align:right;padding-top:6px;">coberto pela mãe de santo 🕯️</td></tr>';
-      html += '</table>';
+      html += '<tr><td>Total Entradas</td><td class="verde">'+fmt(totalE)+'</td></tr>';
+      html += '<tr><td>Total Gastos</td><td class="vermelho">'+fmt(totalG)+'</td></tr>';
+      if (pendentes.length) html += '<tr><td>Total Pendentes (a pagar)</td><td class="vermelho">'+fmt(totalP)+'</td></tr>';
+      html += '<tr class="total-row"><td>SALDO DO PERÍODO</td><td style="text-align:right;color:'+(saldo>=0?'#2a7a60':'#b84040')+'">'+fmt(saldo)+'</td></tr>';
+      if (saldo<0) html += '<tr><td colspan="2" style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:.82rem;color:rgba(80,30,50,.5);text-align:right;padding-top:6px;">coberto pela mãe de santo 🕯️</td></tr>';
+      html += '</table></body></html>';
 
-      html += '</body></html>';
       var win = window.open('', '_blank');
       win.document.write(html);
       win.document.close();
@@ -1221,7 +1260,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
     } else if (formato === 'csv') {
       var rows = [];
-      rows.push(['BOLHAS DE LUZ — PRESTAÇÃO DE CONTAS']);
+      rows.push(['BOLHAS DE LUZ — PRESTAÇÃO DE CONTAS' + (privado ? ' (PRIVACIDADE)' : '')]);
       rows.push(['Período: ' + periodo]);
       rows.push([]);
       rows.push(['RESUMO']);
@@ -1229,11 +1268,22 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       rows.push([totalE.toFixed(2), totalG.toFixed(2), totalP.toFixed(2), saldo.toFixed(2)]);
       rows.push([]);
       rows.push(['ENTRADAS']);
-      rows.push(['Membro','Tipo','Data Pgto','Competência','Valor','Observação']);
-      entradas.forEach(function(l){
-        rows.push([l.membro||'—', l.subTipo==='extra'?'Extra':'Membro', fmtData(l.data), l.competencia?fmtCompetencia(l.competencia):'—', l.valor.toFixed(2), l.obs||'']);
-      });
-      rows.push(['','','','TOTAL',totalE.toFixed(2),'']);
+      if (privado) {
+        rows.push(['Mês','Total Recebido']);
+        var porMesP = {};
+        entradas.forEach(function(l){
+          var ref = (l.competencia || (l.data ? l.data.slice(0,7) : '')) || '—';
+          porMesP[ref] = (porMesP[ref]||0) + l.valor;
+        });
+        Object.keys(porMesP).sort().forEach(function(m){ rows.push([fmtMesAno(m), porMesP[m].toFixed(2)]); });
+        rows.push(['TOTAL', totalE.toFixed(2)]);
+      } else {
+        rows.push(['Membro','Tipo','Data Pgto','Competência','Valor','Observação']);
+        entradas.forEach(function(l){
+          rows.push([l.membro||'—', l.subTipo==='extra'?'Extra':'Membro', fmtData(l.data), l.competencia?fmtCompetencia(l.competencia):'—', l.valor.toFixed(2), l.obs||'']);
+        });
+        rows.push(['','','','TOTAL',totalE.toFixed(2),'']);
+      }
       rows.push([]);
       rows.push(['GASTOS']);
       rows.push(['Conta','Data','Observação','Comprovante','Valor']);
@@ -1257,16 +1307,15 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url;
-      a.download = 'prestacao-contas-bolhasdeluz-' + de + '-a-' + ate + '.csv';
+      a.download = 'prestacao-contas-bolhasdeluz-' + de + '-a-' + ate + (privado?'-privado':'') + '.csv';
       a.click();
       URL.revokeObjectURL(url);
       showToast('CSV baixado ✓');
 
     } else if (formato === 'wpp') {
-      var msg = '🕯️ *BOLHAS DE LUZ — PRESTAÇÃO DE CONTAS*\n';
+      var msg = '🕯️ *BOLHAS DE LUZ — PRESTAÇÃO DE CONTAS*' + (privado ? ' 🔒' : '') + '\n';
       msg += '📅 Período: ' + periodo + '\n';
       msg += '─'.repeat(28) + '\n\n';
-
       msg += '💰 *RESUMO*\n';
       msg += '📥 Entradas: *' + fmt(totalE) + '*\n';
       msg += '📤 Gastos: *' + fmt(totalG) + '*\n';
@@ -1275,18 +1324,29 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       if (saldo < 0) msg += '_coberto pela mãe de santo 🕯️_\n';
       msg += '\n';
 
-      msg += '💚 *ENTRADAS POR MEMBRO*\n';
-      Object.keys(porMembro).sort().forEach(function(m){
-        msg += '• ' + m + ': ' + fmt(porMembro[m].total) + '\n';
-      });
-      msg += '\n';
+      if (privado) {
+        msg += '💚 *ENTRADAS (total)*\n';
+        var porMesW = {};
+        entradas.forEach(function(l){
+          var ref = (l.competencia || (l.data ? l.data.slice(0,7) : '')) || '—';
+          porMesW[ref] = (porMesW[ref]||0) + l.valor;
+        });
+        Object.keys(porMesW).sort().forEach(function(m){ msg += '• ' + fmtMesAno(m) + ': ' + fmt(porMesW[m]) + '\n'; });
+        msg += '▸ _Total: ' + fmt(totalE) + '_\n\n';
+      } else {
+        msg += '💚 *ENTRADAS POR MEMBRO*\n';
+        Object.keys(porMembro).sort().forEach(function(m){
+          msg += '• ' + m + ': ' + fmt(porMembro[m].total) + '\n';
+        });
+        msg += '\n';
+      }
 
       msg += '🧾 *GASTOS POR CONTA*\n';
       Object.keys(porConta).sort().forEach(function(c){
         var g = porConta[c];
         msg += '• ' + c + ': ' + fmt(g.total);
-        var comComprova = g.itens.filter(function(i){ return i.comprovante; }).length;
-        if (comComprova) msg += ' ('+comComprova+' comprovante'+( comComprova>1?'s':'')+')';
+        var comC = g.itens.filter(function(i){ return i.comprovante; }).length;
+        if (comC) msg += ' (' + comC + ' comprovante' + (comC>1?'s':'') + ')';
         msg += '\n';
       });
 
