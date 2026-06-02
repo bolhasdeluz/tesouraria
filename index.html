@@ -607,11 +607,32 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   }
 
   // ── STATE ─────────────────────────────────────────────────
-  var lancamentos = JSON.parse(localStorage.getItem('bdl-tesouraria') || '[]');
+  var lancamentos = [];
   var filtroAtivo = 'todos';
+  var _kvSaveTimer = null;
+
+  // KV API helpers
+  function kvGet(chave, fallback) {
+    return fetch('/api/dados?chave=' + chave)
+      .then(function(r){ return r.json(); })
+      .catch(function(){ return fallback; })
+      .then(function(d){ return (d === null || d === undefined) ? fallback : d; });
+  }
+
+  function kvSet(chave, valor) {
+    return fetch('/api/dados?chave=' + chave, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(valor)
+    }).catch(function(e){ console.warn('KV save error:', e); });
+  }
 
   function save() {
-    localStorage.setItem('bdl-tesouraria', JSON.stringify(lancamentos));
+    // Debounce — evita muitas chamadas seguidas
+    clearTimeout(_kvSaveTimer);
+    _kvSaveTimer = setTimeout(function(){
+      kvSet('lancamentos', lancamentos);
+    }, 400);
   }
 
   // ── INIT DATES ────────────────────────────────────────────
@@ -1554,7 +1575,12 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
   // ── INIT ──────────────────────────────────────────────────
   inicializarFiltroMes();
-  renderInicio();
+  // Mostra spinner enquanto carrega
+  document.getElementById('lista-recente').innerHTML = '<div class="empty"><div class="spinner" style="margin:0 auto"></div></div>';
+  kvGet('lancamentos', []).then(function(dados) {
+    lancamentos = Array.isArray(dados) ? dados : [];
+    renderInicio();
+  });
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════
@@ -1799,9 +1825,9 @@ var agPessoas = [
   {nome:'Nicole',galos:0,galinhas:0},{nome:'Stephani',galos:0,galinhas:0}
 ];
 
-var agPgtos    = JSON.parse(localStorage.getItem('ag_pgtos') || 'null') || {};
-var agGastos   = JSON.parse(localStorage.getItem('ag_gastos') || '[]');
-var agCats     = JSON.parse(localStorage.getItem('ag_cats') || 'null') || [
+var agPgtos    = {};
+var agGastos   = [];
+var agCats     = [
   {nome:'Umbanda',   itens:[{desc:'Umbanda geral',val:100,pago:false,resp:''}]},
   {nome:'Padês',     itens:[{desc:'Padês',val:170,pago:false,resp:''}]},
   {nome:'Elebó',     itens:[{desc:'Elebó',val:150,pago:false,resp:''}]},
@@ -1810,13 +1836,31 @@ var agCats     = JSON.parse(localStorage.getItem('ag_cats') || 'null') || [
   {nome:'Transporte',itens:[{desc:'Uber – 4 toques',val:240,pago:false,resp:''}]},
   {nome:'Extras',    itens:[{desc:'Extras diversos',val:200,pago:false,resp:''}]}
 ];
-
-agPessoas.forEach(function(p){ if(!agPgtos[p.nome]) agPgtos[p.nome]={obr:0,aves:0}; });
+var _agSaveTimer = null;
 
 function agSalvar() {
-  localStorage.setItem('ag_pgtos', JSON.stringify(agPgtos));
-  localStorage.setItem('ag_gastos', JSON.stringify(agGastos));
-  localStorage.setItem('ag_cats', JSON.stringify(agCats));
+  clearTimeout(_agSaveTimer);
+  _agSaveTimer = setTimeout(function(){
+    kvSet('ag_pgtos', agPgtos);
+    kvSet('ag_gastos', agGastos);
+    kvSet('ag_cats', agCats);
+  }, 400);
+}
+
+function agCarregarDados(cb) {
+  var lista = document.getElementById('ag-pessoas-list');
+  if (lista) lista.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></div>';
+  Promise.all([
+    kvGet('ag_pgtos', null),
+    kvGet('ag_gastos', []),
+    kvGet('ag_cats', null)
+  ]).then(function(res) {
+    agPgtos  = res[0] || {};
+    agGastos = Array.isArray(res[1]) ? res[1] : [];
+    agCats   = res[2] || agCats;
+    agPessoas.forEach(function(p){ if(!agPgtos[p.nome]) agPgtos[p.nome]={obr:0,aves:0}; });
+    if (cb) cb();
+  });
 }
 
 function agFmt(v) { return 'R$ '+Number(v).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
@@ -2119,16 +2163,15 @@ function agShowTab(id,btn){
   btn.classList.add('active');
 }
 
-// ── INIT AGOSTO (roda quando o modal abre) ────────────────────
+// ── INIT AGOSTO ───────────────────────────────────────────────
 document.getElementById('agosto-modal').addEventListener('transitionend',function(){});
-(function agInit(){
-  agRenderPessoas(); agRenderGastos(); agRenderOrc(); agRenderAves(); agAtualizarSaldo();
-})();
 
-// Re-render ao abrir o modal (garante dados frescos)
+// Carrega dados ao abrir o modal
 document.querySelector('[onclick="document.getElementById(\'agosto-modal\').classList.add(\'open\')"]')
   .addEventListener('click',function(){
-    agRenderPessoas(); agRenderGastos(); agRenderOrc(); agRenderAves(); agAtualizarSaldo();
+    agCarregarDados(function(){
+      agRenderPessoas(); agRenderGastos(); agRenderOrc(); agRenderAves(); agAtualizarSaldo();
+    });
   });
 </script>
 </body>
