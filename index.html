@@ -1834,6 +1834,33 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
   <div style="height:40px;"></div>
 
+  <!-- Modal editar item orçamento -->
+  <div id="ag-edit-item-modal" style="display:none;position:fixed;inset:0;background:rgba(40,10,20,.6);backdrop-filter:blur(4px);z-index:600;align-items:flex-end;justify-content:center;">
+    <div style="background:#fff;border:1px solid rgba(196,57,107,.15);border-top:3px solid #c4396b;border-radius:16px 16px 0 0;width:100%;max-width:500px;padding:18px;animation:slideUp .25s ease;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2a1a22;">✏️ Editar Item</span>
+        <button onclick="document.getElementById('ag-edit-item-modal').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:rgba(80,30,50,.5);">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="ag-form-row"><label>Descrição</label><input id="ag-ei-desc" placeholder="Nome do item…"></div>
+        <div style="display:flex;gap:10px;">
+          <div class="ag-form-row" style="flex:2"><label>Valor unitário (R$)</label><input id="ag-ei-val" type="number" step="0.01" placeholder="0,00"></div>
+          <div class="ag-form-row" style="flex:1"><label>Quantidade</label><input id="ag-ei-qtd" type="number" step="1" min="1" placeholder="1"></div>
+        </div>
+        <div class="ag-form-row"><label>Responsável</label>
+          <select id="ag-ei-resp" style="width:100%;background:transparent;border:1px solid rgba(196,57,107,.15);border-radius:6px;color:#2a1a22;font-family:'Crimson Pro',serif;font-size:16px;padding:8px 11px;-webkit-appearance:none;">
+            <option value="">— Nenhum —</option>
+            <option>Anna</option><option>Ness</option><option>Thali</option><option>Jaque</option><option>Tassi</option>
+            <option>Brenda</option><option>Anne</option><option>Vitória</option><option>Manu</option>
+            <option>Juliana</option><option>Gabi</option><option>Márcia</option><option>Nicole</option><option>Stephani</option>
+          </select>
+        </div>
+        <div id="ag-ei-total-preview" style="background:rgba(196,57,107,.06);border-radius:7px;padding:8px 12px;font-family:'Crimson Pro',serif;font-size:.95rem;color:#2a1a22;text-align:right;"></div>
+        <button onclick="agSalvarEditItem()" class="ag-btn-save" style="width:100%;padding:12px;">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal WPP próprio do Agosto -->
   <div id="ag-wpp-modal" style="display:none;position:fixed;inset:0;background:rgba(40,10,20,.6);backdrop-filter:blur(4px);z-index:600;align-items:flex-end;justify-content:center;">
     <div style="background:#fff;border:1px solid rgba(196,57,107,.15);border-top:3px solid #c4396b;border-radius:16px 16px 0 0;width:100%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1) both;">
@@ -2133,6 +2160,7 @@ function agItemRowHTML(item, ci, si, ii) {
     + '<span class="ag-item-desc'+(item.pago?' pago':'')+'">'+item.desc
     + (item.pago?'<span style="font-size:.62rem;background:#e8f4f0;color:#2a7a60;border-radius:10px;padding:1px 5px;margin-left:4px">→ Gastos</span>':'')
     + '</span>'
+    + '<button class="ag-item-del" onclick="agAbrirEditItem('+ci+','+siStr+','+ii+')" style="color:rgba(80,30,50,.4);">✏️</button>'
     + '<button class="ag-item-del" onclick="agDelItem('+ci+','+siStr+','+ii+')">🗑</button>'
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:5px;padding-left:20px;flex-wrap:wrap;">'
@@ -2262,6 +2290,54 @@ function agConfirmarCat(){
   document.getElementById('ag-nova-cat').value=''; agRenderOrc();
 }
 function agDelCat(ci){ agCats.splice(ci,1); agSalvar(); agRenderOrc(); }
+
+// ── EDITAR ITEM ORÇAMENTO ─────────────────────────────────────
+var _agEditCtx = null;
+
+function agAbrirEditItem(ci, si, ii) {
+  var item = agGetItens(ci, si)[ii];
+  _agEditCtx = { ci:ci, si:si, ii:ii };
+  document.getElementById('ag-ei-desc').value = item.desc || '';
+  document.getElementById('ag-ei-val').value  = item.val  || '';
+  document.getElementById('ag-ei-qtd').value  = item.qtd  || 1;
+  document.getElementById('ag-ei-resp').value = item.resp || '';
+  agAtualizarPreviewEdicao();
+  document.getElementById('ag-edit-item-modal').style.display = 'flex';
+
+  // Atualiza preview ao digitar
+  ['ag-ei-val','ag-ei-qtd'].forEach(function(id){
+    document.getElementById(id).oninput = agAtualizarPreviewEdicao;
+  });
+}
+
+function agAtualizarPreviewEdicao() {
+  var val = parseFloat(document.getElementById('ag-ei-val').value) || 0;
+  var qtd = parseFloat(document.getElementById('ag-ei-qtd').value) || 1;
+  var total = val * qtd;
+  document.getElementById('ag-ei-total-preview').textContent =
+    qtd + ' × ' + agFmt(val) + ' = ' + agFmt(total);
+}
+
+function agSalvarEditItem() {
+  if (!_agEditCtx) return;
+  var ci = _agEditCtx.ci, si = _agEditCtx.si, ii = _agEditCtx.ii;
+  var desc = document.getElementById('ag-ei-desc').value.trim();
+  var val  = parseFloat(document.getElementById('ag-ei-val').value);
+  var qtd  = parseFloat(document.getElementById('ag-ei-qtd').value) || 1;
+  var resp = document.getElementById('ag-ei-resp').value;
+  if (!desc) { showToast('Informe a descrição'); return; }
+  if (!val || val <= 0) { showToast('Informe o valor'); return; }
+  var item = agGetItens(ci, si)[ii];
+  item.desc = desc; item.val = val; item.qtd = qtd; item.resp = resp;
+  agSalvar();
+  document.getElementById('ag-edit-item-modal').style.display = 'none';
+  agRenderOrc();
+  setTimeout(function(){
+    document.getElementById('ag-cat-'+ci).classList.add('open');
+    if (si !== null && si !== 'null') document.getElementById('ag-subcat-'+ci+'-'+si).classList.add('open');
+  }, 10);
+  showToast('Item atualizado ✓');
+}
 
 // ── AVES ─────────────────────────────────────────────────────
 function agRenderAves(){
