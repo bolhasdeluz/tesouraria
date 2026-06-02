@@ -614,17 +614,33 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   // KV API helpers
   function kvGet(chave, fallback) {
     return fetch('/api/dados?chave=' + chave)
-      .then(function(r){ return r.json(); })
-      .catch(function(){ return fallback; })
-      .then(function(d){ return (d === null || d === undefined) ? fallback : d; });
+      .then(function(r){
+        if (!r.ok) throw new Error('API indisponível');
+        return r.json();
+      })
+      .then(function(d){ return (d === null || d === undefined) ? fallback : d; })
+      .catch(function(){
+        // Fallback: lê do localStorage quando KV não está disponível
+        var mapa = { 'lancamentos': 'bdl-tesouraria', 'ag_pgtos': 'ag_pgtos', 'ag_gastos': 'ag_gastos', 'ag_cats': 'ag_cats' };
+        var chaveLocal = mapa[chave];
+        if (chaveLocal) {
+          try { var v = localStorage.getItem(chaveLocal); return v ? JSON.parse(v) : fallback; } catch(e){}
+        }
+        return fallback;
+      });
   }
 
   function kvSet(chave, valor) {
+    // Salva sempre no localStorage como backup
+    var mapa = { 'lancamentos': 'bdl-tesouraria', 'ag_pgtos': 'ag_pgtos', 'ag_gastos': 'ag_gastos', 'ag_cats': 'ag_cats' };
+    var chaveLocal = mapa[chave];
+    if (chaveLocal) { try { localStorage.setItem(chaveLocal, JSON.stringify(valor)); } catch(e){} }
+    // Tenta salvar no KV
     return fetch('/api/dados?chave=' + chave, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(valor)
-    }).catch(function(e){ console.warn('KV save error:', e); });
+    }).catch(function(e){ console.warn('KV save error (usando localStorage):', e); });
   }
 
   function save() {
