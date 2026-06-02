@@ -1744,7 +1744,12 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     .ag-modal-btns { display:flex; gap:7px; margin-top:12px; }
     .ag-btn-cancel { flex:1; background:none; border:1px solid rgba(196,57,107,.15); border-radius:6px; color:rgba(80,30,50,.5); font-family:'Cinzel',serif; font-size:10px; letter-spacing:.07em; padding:9px; cursor:pointer; }
     .ag-btn-save { flex:2; background:#c4396b; border:none; border-radius:8px; color:#fff; font-family:'Cinzel',serif; font-size:10px; letter-spacing:.07em; font-weight:700; padding:9px; cursor:pointer; }
-    .ag-empty { text-align:center; padding:25px; color:rgba(80,30,50,.5); font-family:'Crimson Pro',serif; font-style:italic; font-size:.88rem; }
+    .ag-subcat-block { border:1px solid rgba(196,57,107,.1); border-radius:8px; overflow:hidden; margin:6px 0; }
+    .ag-subcat-hdr { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; cursor:pointer; background:rgba(196,57,107,.04); }
+    .ag-subcat-nome { font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:.06em; font-weight:600; color:rgba(80,30,50,.6); }
+    .ag-subcat-body { display:none; padding:6px 10px 8px; }
+    .ag-subcat-block.open .ag-subcat-body { display:block; }
+    .ag-subcat-block.open .ag-chevron { transform:rotate(180deg); }
   </style>
 
   <!-- Header Agosto -->
@@ -2034,57 +2039,229 @@ function agRenderGastos() {
 }
 
 // ── ORÇAMENTO ────────────────────────────────────────────────
+var AG_RESPONSAVEIS = ['Anna','Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
+
+function agItemTotal(item) {
+  var qtd = parseFloat(item.qtd) || 1;
+  return (parseFloat(item.val) || 0) * qtd;
+}
+
 function agRenderOrc() {
-  var list=document.getElementById('ag-cats-list');
-  list.innerHTML=''; var total=0;
-  agCats.forEach(function(cat,ci) {
-    var sub=cat.itens.reduce(function(s,i){return s+i.val;},0); total+=sub;
-    var block=document.createElement('div');
-    block.className='ag-cat-block'; block.id='ag-cat-'+ci;
-    var itensHTML=cat.itens.map(function(item,ii){
-      return '<div class="ag-item-row'+(item.pago?' ag-item-pago':'')+'"><input type="checkbox" class="ag-item-chk"'+(item.pago?' checked':'')
-        +' onchange="agTogglePago('+ci+','+ii+',this.checked)"><span class="ag-item-desc'+(item.pago?' pago':'')+'">'+item.desc
-        +(item.pago?'<span style="font-size:.62rem;background:#e8f4f0;color:#2a7a60;border-radius:10px;padding:1px 5px;margin-left:4px">→ Gastos</span>':'')
-        +'</span><span class="ag-item-val" style="'+(item.pago?'color:#2a7a60':'')+'">'+agFmt(item.val)+'</span>'
-        +'<button class="ag-item-del" onclick="agDelItem('+ci+','+ii+')">🗑</button></div>';
+  var list = document.getElementById('ag-cats-list');
+  list.innerHTML = ''; var total = 0;
+
+  agCats.forEach(function(cat, ci) {
+    // Subtotal considera subcategorias também
+    var sub = 0;
+    cat.itens.forEach(function(item){ sub += agItemTotal(item); });
+    if (cat.subcats) {
+      cat.subcats.forEach(function(sc){
+        sc.itens.forEach(function(item){ sub += agItemTotal(item); });
+      });
+    }
+    total += sub;
+
+    var block = document.createElement('div');
+    block.className = 'ag-cat-block'; block.id = 'ag-cat-' + ci;
+
+    // Itens diretos da categoria
+    var itensHTML = (cat.itens||[]).map(function(item, ii){
+      return agItemRowHTML(item, ci, null, ii);
     }).join('');
-    block.innerHTML='<div class="ag-cat-hdr" onclick="agToggleCat('+ci+')">'
-      +'<span class="ag-cat-nome">'+cat.nome+'</span>'
-      +'<div style="display:flex;align-items:center;gap:7px"><span class="ag-cat-sub">'+agFmt(sub)+'</span><span class="ag-chevron" style="color:rgba(80,30,50,.5)">▾</span></div>'
-      +'</div><div class="ag-cat-body">'+(itensHTML||'<div style="color:rgba(80,30,50,.5);font-size:.8rem;padding:4px 0">Nenhum item</div>')
-      +'<div class="ag-add-item-row" style="margin-top:7px"><input id="ag-ni-desc-'+ci+'" placeholder="Item…" style="flex:2;min-width:100px">'
-      +'<input id="ag-ni-val-'+ci+'" type="number" step="0.01" placeholder="0,00" style="flex:1;text-align:right">'
-      +'<button class="ag-add-item-btn" onclick="agAddItem('+ci+')">+ ADD</button></div>'
-      +'<button onclick="agDelCat('+ci+')" style="margin-top:7px;background:none;border:none;color:rgba(80,30,50,.4);font-family:\'DM Sans\',sans-serif;font-size:.72rem;cursor:pointer">🗑 Excluir categoria</button>'
-      +'</div>';
+
+    // Subcategorias
+    var subcatsHTML = '';
+    (cat.subcats||[]).forEach(function(sc, si){
+      var scSub = sc.itens.reduce(function(s,i){ return s + agItemTotal(i); }, 0);
+      var scItens = sc.itens.map(function(item, ii){
+        return agItemRowHTML(item, ci, si, ii);
+      }).join('');
+      subcatsHTML += '<div class="ag-subcat-block" id="ag-subcat-'+ci+'-'+si+'">'
+        + '<div class="ag-subcat-hdr" onclick="agToggleSubcat('+ci+','+si+')">'
+        + '<span class="ag-subcat-nome">↳ '+sc.nome+'</span>'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+        + '<span style="font-family:\'Crimson Pro\',serif;font-size:.85rem;font-weight:600;color:#2a1a22;">'+agFmt(scSub)+'</span>'
+        + '<span class="ag-chevron" style="font-size:.7rem;color:rgba(80,30,50,.5)">▾</span>'
+        + '<button onclick="event.stopPropagation();agDelSubcat('+ci+','+si+')" style="background:none;border:none;color:rgba(80,30,50,.3);cursor:pointer;font-size:.75rem;padding:0 2px;">🗑</button>'
+        + '</div></div>'
+        + '<div class="ag-subcat-body">'
+        + (scItens || '<div style="color:rgba(80,30,50,.5);font-size:.78rem;padding:4px 0">Nenhum item</div>')
+        + agAddItemRowHTML(ci, si)
+        + '</div></div>';
+    });
+
+    // Formulário adicionar subcategoria
+    var addSubcatHTML = '<div id="ag-add-subcat-row-'+ci+'" style="display:none;margin-top:6px;">'
+      + '<div class="ag-add-item-row">'
+      + '<input id="ag-nova-subcat-'+ci+'" placeholder="Nome da subcategoria…" style="flex:1;">'
+      + '<button class="ag-add-item-btn" onclick="agConfirmarSubcat('+ci+')">Criar</button>'
+      + '<button onclick="document.getElementById(\'ag-add-subcat-row-'+ci+'\').style.display=\'none\'" style="background:none;border:1px solid var(--border);border-radius:6px;color:rgba(80,30,50,.5);font-size:.7rem;padding:5px 8px;cursor:pointer;">✕</button>'
+      + '</div></div>';
+
+    block.innerHTML = '<div class="ag-cat-hdr" onclick="agToggleCat('+ci+')">'
+      + '<span class="ag-cat-nome">'+cat.nome+'</span>'
+      + '<div style="display:flex;align-items:center;gap:7px">'
+      + '<span class="ag-cat-sub">'+agFmt(sub)+'</span>'
+      + '<span class="ag-chevron" style="color:rgba(80,30,50,.5)">▾</span>'
+      + '</div></div>'
+      + '<div class="ag-cat-body">'
+      + (itensHTML || '')
+      + subcatsHTML
+      + '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">'
+      + '<button onclick="agShowAddSubcat('+ci+')" style="background:none;border:1px dashed rgba(196,57,107,.3);border-radius:6px;color:rgba(196,57,107,.7);font-family:\'Cinzel\',serif;font-size:8.5px;font-weight:700;letter-spacing:.07em;padding:5px 10px;cursor:pointer;">+ Subcategoria</button>'
+      + '</div>'
+      + addSubcatHTML
+      + agAddItemRowHTML(ci, null)
+      + '<button onclick="agDelCat('+ci+')" style="margin-top:8px;background:none;border:none;color:rgba(80,30,50,.4);font-family:\'DM Sans\',sans-serif;font-size:.72rem;cursor:pointer">🗑 Excluir categoria</button>'
+      + '</div>';
+
     list.appendChild(block);
   });
-  document.getElementById('ag-orc-total').textContent=agFmt(total);
+  document.getElementById('ag-orc-total').textContent = agFmt(total);
 }
-function agToggleCat(ci){document.getElementById('ag-cat-'+ci).classList.toggle('open');}
-function agAddItem(ci){
-  var desc=document.getElementById('ag-ni-desc-'+ci).value.trim();
-  var val=parseFloat(document.getElementById('ag-ni-val-'+ci).value)||0;
-  if(!desc) return;
-  agCats[ci].itens.push({desc:desc,val:val,pago:false,resp:''}); agSalvar(); agRenderOrc();
-  setTimeout(function(){document.getElementById('ag-cat-'+ci).classList.add('open');},10);
+
+function agItemRowHTML(item, ci, si, ii) {
+  var total = agItemTotal(item);
+  var qtd = parseFloat(item.qtd) || 1;
+  var respOpts = AG_RESPONSAVEIS.map(function(r){
+    return '<option value="'+r+'"'+(item.resp===r?' selected':'')+'>'+r+'</option>';
+  }).join('');
+  var siStr = si !== null ? si : 'null';
+  return '<div class="ag-item-row'+(item.pago?' ag-item-pago':'')+'" style="flex-wrap:wrap;gap:4px;">'
+    + '<div style="display:flex;align-items:center;gap:5px;width:100%;">'
+    + '<input type="checkbox" class="ag-item-chk"'+(item.pago?' checked':'')+' onchange="agTogglePago('+ci+','+siStr+','+ii+',this.checked)">'
+    + '<span class="ag-item-desc'+(item.pago?' pago':'')+'">'+item.desc
+    + (item.pago?'<span style="font-size:.62rem;background:#e8f4f0;color:#2a7a60;border-radius:10px;padding:1px 5px;margin-left:4px">→ Gastos</span>':'')
+    + '</span>'
+    + '<button class="ag-item-del" onclick="agDelItem('+ci+','+siStr+','+ii+')">🗑</button>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:5px;padding-left:20px;flex-wrap:wrap;">'
+    // Qtd × Valor = Total
+    + '<input type="number" value="'+qtd+'" min="1" step="1" placeholder="Qtd" oninput="agSetQtd('+ci+','+siStr+','+ii+',this.value)" style="width:46px;background:transparent;border:1px solid rgba(196,57,107,.15);border-radius:5px;font-family:\'Crimson Pro\',serif;font-size:.8rem;padding:3px 5px;text-align:center;-webkit-appearance:none;">'
+    + '<span style="font-size:.75rem;color:rgba(80,30,50,.4);">×</span>'
+    + '<span style="font-family:\'Crimson Pro\',serif;font-size:.82rem;color:rgba(80,30,50,.5);">'+agFmt(item.val)+'</span>'
+    + '<span style="font-size:.75rem;color:rgba(80,30,50,.4);">=</span>'
+    + '<span style="font-family:\'Crimson Pro\',serif;font-size:.88rem;font-weight:600;color:'+(item.pago?'#2a7a60':'#2a1a22')+'" id="ag-item-total-'+ci+'-'+siStr+'-'+ii+'">'+agFmt(total)+'</span>'
+    // Responsável
+    + '<select onchange="agSetResp('+ci+','+siStr+','+ii+',this.value)" style="background:transparent;border:1px solid rgba(196,57,107,.15);border-radius:5px;color:rgba(80,30,50,.6);font-family:\'DM Sans\',sans-serif;font-size:.72rem;padding:3px 5px;max-width:90px;-webkit-appearance:none;">'
+    + '<option value="">Resp…</option>'+respOpts
+    + '</select>'
+    + '</div>'
+    + '</div>';
 }
-function agDelItem(ci,ii){agCats[ci].itens.splice(ii,1);agSalvar();agRenderOrc();setTimeout(function(){document.getElementById('ag-cat-'+ci).classList.add('open');},10);}
-function agTogglePago(ci,ii,val){
-  var item=agCats[ci].itens[ii]; item.pago=val;
-  if(val){agGastos.push({desc:item.desc,valor:item.val,categoria:agCats[ci].nome,data:new Date().toISOString().split('T')[0],responsavel:item.resp||'',fromOrc:true});showToast('✓ Movido para Gastos!');}
-  else{var idx=agGastos.findIndex(function(g){return g.fromOrc&&g.desc===item.desc&&g.valor===item.val&&g.categoria===agCats[ci].nome;});if(idx!==-1)agGastos.splice(idx,1);showToast('Removido dos Gastos');}
+
+function agAddItemRowHTML(ci, si) {
+  var siStr = si !== null ? si : 'null';
+  var prefix = si !== null ? 'ag-si-'+ci+'-'+si : 'ag-ci-'+ci;
+  return '<div class="ag-add-item-row" style="margin-top:6px;flex-wrap:wrap;">'
+    + '<input id="'+prefix+'-desc" placeholder="Item…" style="flex:2;min-width:100px">'
+    + '<input id="'+prefix+'-val" type="number" step="0.01" placeholder="R$ unit." style="flex:1;text-align:right;min-width:70px">'
+    + '<input id="'+prefix+'-qtd" type="number" step="1" placeholder="Qtd" style="width:50px;text-align:center;-webkit-appearance:none;" value="1">'
+    + '<button class="ag-add-item-btn" onclick="agAddItem('+ci+','+siStr+')">+ ADD</button>'
+    + '</div>';
+}
+
+function agToggleCat(ci){ document.getElementById('ag-cat-'+ci).classList.toggle('open'); }
+
+function agToggleSubcat(ci, si) {
+  document.getElementById('ag-subcat-'+ci+'-'+si).classList.toggle('open');
+}
+
+function agGetItens(ci, si) {
+  if (si === null || si === undefined || si === 'null') return agCats[ci].itens;
+  if (!agCats[ci].subcats) agCats[ci].subcats = [];
+  return agCats[ci].subcats[si].itens;
+}
+
+function agAddItem(ci, si) {
+  var siStr = si !== null && si !== undefined ? si : null;
+  var prefix = siStr !== null ? 'ag-si-'+ci+'-'+siStr : 'ag-ci-'+ci;
+  var desc = document.getElementById(prefix+'-desc').value.trim();
+  var val  = parseFloat(document.getElementById(prefix+'-val').value) || 0;
+  var qtd  = parseFloat(document.getElementById(prefix+'-qtd').value) || 1;
+  if (!desc) return;
+  agGetItens(ci, siStr).push({ desc:desc, val:val, qtd:qtd, pago:false, resp:'' });
+  agSalvar(); agRenderOrc();
+  setTimeout(function(){
+    document.getElementById('ag-cat-'+ci).classList.add('open');
+    if (siStr !== null) document.getElementById('ag-subcat-'+ci+'-'+siStr).classList.add('open');
+  }, 10);
+}
+
+function agDelItem(ci, si, ii) {
+  agGetItens(ci, si).splice(ii, 1);
+  agSalvar(); agRenderOrc();
+  setTimeout(function(){ document.getElementById('ag-cat-'+ci).classList.add('open'); }, 10);
+}
+
+function agSetQtd(ci, si, ii, val) {
+  var item = agGetItens(ci, si)[ii];
+  item.qtd = parseFloat(val) || 1;
+  var total = agItemTotal(item);
+  var siStr = si !== null && si !== undefined && si !== 'null' ? si : 'null';
+  var el = document.getElementById('ag-item-total-'+ci+'-'+siStr+'-'+ii);
+  if (el) el.textContent = agFmt(total);
+  agSalvar();
+  // Atualiza total geral
+  var totalGeral = 0;
+  agCats.forEach(function(cat){
+    cat.itens.forEach(function(i){ totalGeral += agItemTotal(i); });
+    (cat.subcats||[]).forEach(function(sc){ sc.itens.forEach(function(i){ totalGeral += agItemTotal(i); }); });
+  });
+  document.getElementById('ag-orc-total').textContent = agFmt(totalGeral);
+}
+
+function agSetResp(ci, si, ii, val) {
+  agGetItens(ci, si)[ii].resp = val;
+  agSalvar();
+}
+
+function agTogglePago(ci, si, ii, val) {
+  var itens = agGetItens(ci, si);
+  var item = itens[ii];
+  var catNome = agCats[ci].nome + (si !== null && si !== undefined && si !== 'null' ? ' / '+(agCats[ci].subcats[si].nome) : '');
+  item.pago = val;
+  var totalItem = agItemTotal(item);
+  if (val) {
+    agGastos.push({ desc:item.desc, valor:totalItem, categoria:catNome, data:new Date().toISOString().split('T')[0], responsavel:item.resp||'', fromOrc:true });
+    showToast('✓ Movido para Gastos!');
+  } else {
+    var idx = agGastos.findIndex(function(g){ return g.fromOrc && g.desc===item.desc && g.valor===totalItem && g.categoria===catNome; });
+    if (idx !== -1) agGastos.splice(idx, 1);
+    showToast('Removido dos Gastos');
+  }
   agSalvar(); agAtualizarSaldo(); agRenderGastos(); agRenderOrc();
-  setTimeout(function(){document.getElementById('ag-cat-'+ci).classList.add('open');},10);
+  setTimeout(function(){ document.getElementById('ag-cat-'+ci).classList.add('open'); }, 10);
 }
-function agAddCat(){document.getElementById('ag-add-cat-row').style.display='block';document.getElementById('ag-nova-cat').focus();}
+
+function agShowAddSubcat(ci) {
+  document.getElementById('ag-add-subcat-row-'+ci).style.display = 'block';
+  document.getElementById('ag-nova-subcat-'+ci).focus();
+}
+
+function agConfirmarSubcat(ci) {
+  var nome = document.getElementById('ag-nova-subcat-'+ci).value.trim();
+  if (!nome) return;
+  if (!agCats[ci].subcats) agCats[ci].subcats = [];
+  agCats[ci].subcats.push({ nome:nome, itens:[] });
+  agSalvar(); agRenderOrc();
+  setTimeout(function(){ document.getElementById('ag-cat-'+ci).classList.add('open'); }, 10);
+}
+
+function agDelSubcat(ci, si) {
+  agCats[ci].subcats.splice(si, 1);
+  agSalvar(); agRenderOrc();
+  setTimeout(function(){ document.getElementById('ag-cat-'+ci).classList.add('open'); }, 10);
+}
+
+function agAddCat(){ document.getElementById('ag-add-cat-row').style.display='block'; document.getElementById('ag-nova-cat').focus(); }
 function agConfirmarCat(){
   var nome=document.getElementById('ag-nova-cat').value.trim(); if(!nome)return;
-  agCats.push({nome:nome,itens:[]}); agSalvar();
+  agCats.push({nome:nome,itens:[],subcats:[]}); agSalvar();
   document.getElementById('ag-add-cat-row').style.display='none';
   document.getElementById('ag-nova-cat').value=''; agRenderOrc();
 }
-function agDelCat(ci){agCats.splice(ci,1);agSalvar();agRenderOrc();}
+function agDelCat(ci){ agCats.splice(ci,1); agSalvar(); agRenderOrc(); }
 
 // ── AVES ─────────────────────────────────────────────────────
 function agRenderAves(){
