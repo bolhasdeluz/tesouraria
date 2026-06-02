@@ -1838,7 +1838,10 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   <div id="ag-edit-item-modal" style="display:none;position:fixed;inset:0;background:rgba(40,10,20,.6);backdrop-filter:blur(4px);z-index:600;align-items:flex-end;justify-content:center;">
     <div style="background:#fff;border:1px solid rgba(196,57,107,.15);border-top:3px solid #c4396b;border-radius:16px 16px 0 0;width:100%;max-width:500px;padding:18px;animation:slideUp .25s ease;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2a1a22;">✏️ Editar Item</span>
+        <div>
+          <div style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2a1a22;">✏️ Editar Item</div>
+          <div id="ag-ei-location" style="font-family:'DM Sans',sans-serif;font-size:.72rem;color:rgba(80,30,50,.5);margin-top:2px;"></div>
+        </div>
         <button onclick="document.getElementById('ag-edit-item-modal').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:rgba(80,30,50,.5);">✕</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:12px;">
@@ -1856,6 +1859,12 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
           </select>
         </div>
         <div id="ag-ei-total-preview" style="background:rgba(196,57,107,.06);border-radius:7px;padding:8px 12px;font-family:'Crimson Pro',serif;font-size:.95rem;color:#2a1a22;text-align:right;"></div>
+        <div class="ag-form-row"><label>Mover para categoria</label>
+          <select id="ag-ei-cat" onchange="agAtualizarSubcatSelect()" style="width:100%;background:transparent;border:1px solid rgba(196,57,107,.15);border-radius:6px;color:#2a1a22;font-family:'Crimson Pro',serif;font-size:16px;padding:8px 11px;-webkit-appearance:none;"></select>
+        </div>
+        <div class="ag-form-row" id="ag-ei-subcat-row"><label>Subcategoria (opcional)</label>
+          <select id="ag-ei-subcat" style="width:100%;background:transparent;border:1px solid rgba(196,57,107,.15);border-radius:6px;color:#2a1a22;font-family:'Crimson Pro',serif;font-size:16px;padding:8px 11px;-webkit-appearance:none;"></select>
+        </div>
         <button onclick="agSalvarEditItem()" class="ag-btn-save" style="width:100%;padding:12px;">Salvar</button>
       </div>
     </div>
@@ -2301,13 +2310,42 @@ function agAbrirEditItem(ci, si, ii) {
   document.getElementById('ag-ei-val').value  = item.val  || '';
   document.getElementById('ag-ei-qtd').value  = item.qtd  || 1;
   document.getElementById('ag-ei-resp').value = item.resp || '';
+
+  // Breadcrumb
+  var catNome = agCats[ci].nome;
+  var siReal = (si !== null && si !== undefined && si !== 'null') ? parseInt(si) : null;
+  var locLabel = catNome;
+  if (siReal !== null && agCats[ci].subcats && agCats[ci].subcats[siReal]) {
+    locLabel = catNome + ' › ' + agCats[ci].subcats[siReal].nome;
+  }
+  document.getElementById('ag-ei-location').textContent = locLabel;
+
+  // Popular select de categorias
+  var catSel = document.getElementById('ag-ei-cat');
+  catSel.innerHTML = agCats.map(function(cat, idx){
+    return '<option value="'+idx+'"'+(idx===ci?' selected':'')+'>'+cat.nome+'</option>';
+  }).join('');
+  agAtualizarSubcatSelect(ci, siReal);
+
   agAtualizarPreviewEdicao();
   document.getElementById('ag-edit-item-modal').style.display = 'flex';
-
-  // Atualiza preview ao digitar
   ['ag-ei-val','ag-ei-qtd'].forEach(function(id){
     document.getElementById(id).oninput = agAtualizarPreviewEdicao;
   });
+}
+
+function agAtualizarSubcatSelect(ciOverride, siOverride) {
+  var ci = ciOverride !== undefined ? ciOverride : parseInt(document.getElementById('ag-ei-cat').value);
+  var subcats = (agCats[ci] && agCats[ci].subcats) ? agCats[ci].subcats : [];
+  var sel = document.getElementById('ag-ei-subcat');
+  sel.innerHTML = '<option value="null">— Categoria principal —</option>'
+    + subcats.map(function(sc, idx){
+        var sel = (siOverride !== null && siOverride !== undefined && idx === siOverride) ? ' selected' : '';
+        return '<option value="'+idx+'"'+sel+'>'+sc.nome+'</option>';
+      }).join('');
+  document.getElementById('ag-ei-subcat-row').style.display = subcats.length ? 'flex' : 'none';
+  document.getElementById('ag-ei-subcat-row').style.flexDirection = 'column';
+  document.getElementById('ag-ei-subcat-row').style.gap = '5px';
 }
 
 function agAtualizarPreviewEdicao() {
@@ -2327,14 +2365,33 @@ function agSalvarEditItem() {
   var resp = document.getElementById('ag-ei-resp').value;
   if (!desc) { showToast('Informe a descrição'); return; }
   if (!val || val <= 0) { showToast('Informe o valor'); return; }
-  var item = agGetItens(ci, si)[ii];
+
+  // Destino novo
+  var novoCI = parseInt(document.getElementById('ag-ei-cat').value);
+  var novoSIRaw = document.getElementById('ag-ei-subcat').value;
+  var novoSI = (novoSIRaw === 'null' || novoSIRaw === '') ? null : parseInt(novoSIRaw);
+
+  // Pega o item original
+  var itensOrigem = agGetItens(ci, si);
+  var item = Object.assign({}, itensOrigem[ii]);
   item.desc = desc; item.val = val; item.qtd = qtd; item.resp = resp;
+
+  // Remove da origem
+  itensOrigem.splice(ii, 1);
+
+  // Insere no destino
+  var itensDestino = agGetItens(novoCI, novoSI);
+  itensDestino.push(item);
+
   agSalvar();
   document.getElementById('ag-edit-item-modal').style.display = 'none';
   agRenderOrc();
   setTimeout(function(){
-    document.getElementById('ag-cat-'+ci).classList.add('open');
-    if (si !== null && si !== 'null') document.getElementById('ag-subcat-'+ci+'-'+si).classList.add('open');
+    document.getElementById('ag-cat-'+novoCI).classList.add('open');
+    if (novoSI !== null) {
+      var scEl = document.getElementById('ag-subcat-'+novoCI+'-'+novoSI);
+      if (scEl) scEl.classList.add('open');
+    }
   }, 10);
   showToast('Item atualizado ✓');
 }
