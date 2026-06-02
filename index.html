@@ -635,6 +635,38 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     }, 400);
   }
 
+  // ── MIGRAÇÃO localStorage → KV (roda uma vez automaticamente) ─
+  function migrarLocalStorage() {
+    if (localStorage.getItem('bdl-kv-migrated')) return Promise.resolve(false);
+    var dadosLocais = localStorage.getItem('bdl-tesouraria');
+    if (!dadosLocais) return Promise.resolve(false);
+    try {
+      var dados = JSON.parse(dadosLocais);
+      if (!Array.isArray(dados) || dados.length === 0) return Promise.resolve(false);
+      showToast('Migrando dados para a nuvem…');
+      return kvSet('lancamentos', dados).then(function(){
+        localStorage.setItem('bdl-kv-migrated', '1');
+        showToast('Dados migrados com sucesso ✓');
+        return true;
+      });
+    } catch(e) { return Promise.resolve(false); }
+  }
+
+  function migrarLocalStorageAgosto() {
+    if (localStorage.getItem('ag-kv-migrated')) return Promise.resolve();
+    var pgtos  = localStorage.getItem('ag_pgtos');
+    var gastos = localStorage.getItem('ag_gastos');
+    var cats   = localStorage.getItem('ag_cats');
+    if (!pgtos && !gastos && !cats) return Promise.resolve();
+    var p = [];
+    try { if (pgtos)  p.push(kvSet('ag_pgtos',  JSON.parse(pgtos)));  } catch(e){}
+    try { if (gastos) p.push(kvSet('ag_gastos', JSON.parse(gastos))); } catch(e){}
+    try { if (cats)   p.push(kvSet('ag_cats',   JSON.parse(cats)));   } catch(e){}
+    return Promise.all(p).then(function(){
+      localStorage.setItem('ag-kv-migrated', '1');
+    });
+  }
+
   // ── INIT DATES ────────────────────────────────────────────
   document.getElementById('entrada-data').value = today();
   document.getElementById('gasto-data').value = today();
@@ -1575,9 +1607,15 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
   // ── INIT ──────────────────────────────────────────────────
   inicializarFiltroMes();
-  // Mostra spinner enquanto carrega
   document.getElementById('lista-recente').innerHTML = '<div class="empty"><div class="spinner" style="margin:0 auto"></div></div>';
-  kvGet('lancamentos', []).then(function(dados) {
+
+  // 1. Migra localStorage → KV se necessário
+  // 2. Carrega do KV
+  migrarLocalStorage().then(function(){
+    return migrarLocalStorageAgosto();
+  }).then(function(){
+    return kvGet('lancamentos', []);
+  }).then(function(dados){
     lancamentos = Array.isArray(dados) ? dados : [];
     renderInicio();
   });
