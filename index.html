@@ -248,6 +248,15 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       </div>
     </div>
     <div id="saldo-nota-mae" style="display:none;text-align:right;margin-top:-8px;margin-bottom:6px;padding-right:4px;font-family:'Crimson Pro',serif;font-style:italic;font-size:.78rem;color:var(--text-dim);">coberto pela mãe de santo 🕯️</div>
+
+    <!-- Filtros de tipo -->
+    <div class="filter-bar" id="inicio-filter-bar">
+      <button class="fbtn active" onclick="setInicioFiltro('todos', this)">Todos</button>
+      <button class="fbtn verde" onclick="setInicioFiltro('entrada', this)">💚 Entradas</button>
+      <button class="fbtn" onclick="setInicioFiltro('gasto', this)">🧾 Gastos</button>
+      <button class="fbtn" onclick="setInicioFiltro('pendente', this)" style="color:var(--red);border-color:rgba(184,64,64,.25);">🔴 Pendentes</button>
+    </div>
+
     <div class="section-header"><div class="section-title" id="lancamentos-label">Últimos lançamentos</div></div>
     <div id="lista-recente"></div>
   </div>
@@ -607,6 +616,16 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   // ── STATE ─────────────────────────────────────────────────
   var lancamentos = [];
   var filtroAtivo = 'todos';
+  var inicioFiltro = 'todos';
+
+  function setInicioFiltro(f, btn) {
+    inicioFiltro = f;
+    document.querySelectorAll('#inicio-filter-bar .fbtn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    // Cor especial para pendente ativo
+    if (f === 'pendente') { btn.style.background = 'var(--red)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--red)'; }
+    renderInicio();
+  }
   var _kvSaveTimer = null;
 
   // KV API helpers
@@ -970,10 +989,16 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       notaEl.style.display = 'none';
     }
     document.getElementById('lancamentos-label').textContent = filtroMesAtivo ? 'Lançamentos do mês' : 'Últimos lançamentos';
-    var recentes = filtroMesAtivo ? lista : lista.slice(0, 5);
+    // Aplica filtro de tipo
+    var listaTipo = lista;
+    if (inicioFiltro === 'entrada') listaTipo = lista.filter(function(l){ return l.tipo === 'entrada'; });
+    else if (inicioFiltro === 'gasto') listaTipo = lista.filter(function(l){ return l.tipo === 'gasto' && l.status !== 'pendente'; });
+    else if (inicioFiltro === 'pendente') listaTipo = lista.filter(function(l){ return l.status === 'pendente'; });
+    var recentes = filtroMesAtivo ? listaTipo : listaTipo.slice(0, 8);
     var el = document.getElementById('lista-recente');
     if (!recentes.length) {
-      el.innerHTML = '<div class="empty"><div class="empty-icon">🕯️</div><div class="empty-text">Nenhum lançamento' + (filtroMesAtivo ? ' neste mês' : ' ainda') + '</div></div>';
+      var msgs = { todos: 'Nenhum lançamento' + (filtroMesAtivo ? ' neste mês' : ' ainda'), entrada: 'Nenhuma entrada', gasto: 'Nenhum gasto', pendente: 'Nenhuma conta pendente 🎉' };
+      el.innerHTML = '<div class="empty"><div class="empty-icon">🕯️</div><div class="empty-text">' + (msgs[inicioFiltro]||'Nenhum lançamento') + '</div></div>';
       return;
     }
     el.innerHTML = recentes.map(itemHTML).join('');
