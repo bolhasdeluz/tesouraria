@@ -1,7 +1,4 @@
 // functions/api/dados.js
-// Cloudflare Pages Function — TESOURARIA_KV
-// Chaves: "lancamentos", "ag_pgtos", "ag_gastos", "ag_cats"
-
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -14,11 +11,9 @@ export async function onRequest(context) {
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { headers });
-  }
+  if (request.method === 'OPTIONS') return new Response(null, { headers });
 
-  const CHAVES_VALIDAS = ['lancamentos', 'ag_pgtos', 'ag_gastos', 'ag_cats'];
+  const CHAVES_VALIDAS = ['lancamentos', 'ag_pgtos', 'ag_gastos', 'ag_cats', 'ag_catalogo'];
 
   if (!chave || !CHAVES_VALIDAS.includes(chave)) {
     return new Response(JSON.stringify({ erro: 'Chave inválida' }), { status: 400, headers });
@@ -31,7 +26,6 @@ export async function onRequest(context) {
 
   if (request.method === 'POST') {
     const body = await request.text();
-    // Valida JSON antes de salvar
     try { JSON.parse(body); } catch {
       return new Response(JSON.stringify({ erro: 'JSON inválido' }), { status: 400, headers });
     }
