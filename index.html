@@ -429,45 +429,6 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   </div>
 </div>
 
-<!-- PENDENTE MODAL -->
-<div class="modal-overlay" id="pendente-overlay" onclick="fecharModal('pendente-overlay',event)">
-  <div class="modal-sheet">
-    <div class="modal-header">
-      <div class="modal-title">🔴 Lançar Pendente</div>
-      <button class="modal-close" onclick="document.getElementById('pendente-overlay').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div style="background:rgba(184,64,64,.07);border:1px solid rgba(184,64,64,.2);border-radius:8px;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:.78rem;color:var(--red);margin-bottom:4px;">
-        Conta a pagar — aparece no histórico como pendente até você marcar como paga.
-      </div>
-      <div class="field"><label class="field-label">Conta</label>
-        <select id="pend-conta">
-          <option value="">Selecionar conta…</option>
-          <option>Luz</option><option>Água</option><option>Alarme Serviço</option><option>Internet</option>
-          <option>Aluguel</option><option>Tambor</option><option>Agosto</option><option>Extras</option>
-        </select>
-      </div>
-      <div class="field-row">
-        <div class="field"><label class="field-label">Valor (R$)</label><input type="number" id="pend-valor" placeholder="0,00" min="0" step="0.01"></div>
-        <div class="field"><label class="field-label">Vencimento</label><input type="date" id="pend-vencimento"></div>
-      </div>
-      <div class="field"><label class="field-label">Observação</label><input type="text" id="pend-obs" placeholder="Opcional…"></div>
-      <div class="field"><label class="field-label">Comprovante / Boleto</label>
-        <div class="upload-area" id="pend-upload-area">
-          <input type="file" id="pend-comprovante-file" accept="image/*,.pdf" onchange="handlePendFile(this)">
-          <div class="upload-icon">📎</div>
-          <div class="upload-text">Toque para anexar<br><strong>boleto, foto ou PDF</strong></div>
-        </div>
-        <div class="upload-preview" id="pend-upload-preview">
-          <span>📄</span><span class="upload-preview-name" id="pend-upload-nome"></span>
-          <button class="upload-remove" onclick="removerPendArquivo()">✕</button>
-        </div>
-      </div>
-      <button class="btn-primary" style="background:var(--red);" onclick="salvarPendente()">Salvar como Pendente</button>
-    </div>
-  </div>
-</div>
-
 <!-- EXPORT CONFIG MODAL -->
 <div class="modal-overlay" id="export-config-overlay" onclick="fecharModal('export-config-overlay',event)">
   <div class="modal-sheet">
