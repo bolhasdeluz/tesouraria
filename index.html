@@ -43,6 +43,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 @keyframes flicker { 0% { opacity: .8; transform: scale(1); } 100% { opacity: 1; transform: scale(1.08); } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* NAV */
@@ -155,9 +156,9 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 .fbtn.active.verde { background: var(--green); border-color: var(--green); }
 
 /* MODALS SHARED */
-.modal-overlay { position: fixed; inset: 0; background: rgba(40,10,20,.55); backdrop-filter: blur(4px); z-index: 300; display: none; align-items: flex-end; justify-content: center; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(40,10,20,.55); backdrop-filter: blur(4px); z-index: 300; display: none; align-items: flex-start; justify-content: center; padding-top: 60px; }
 .modal-overlay.open { display: flex; }
-.modal-sheet { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--gold); border-radius: 16px 16px 0 0; box-shadow: 0 -8px 40px rgba(196,57,107,.15); width: 100%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; animation: slideUp .3s cubic-bezier(.34,1.56,.64,1) both; }
+.modal-sheet { background: var(--surface); border: 1px solid var(--border); border-bottom: 3px solid var(--gold); border-top: none; border-radius: 0 0 16px 16px; box-shadow: 0 8px 40px rgba(196,57,107,.15); width: 100%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; animation: slideDown .3s cubic-bezier(.34,1.56,.64,1) both; }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .modal-title { font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text); }
 .modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-dim); padding: 2px 6px; }
@@ -2355,11 +2356,19 @@ function agCarregarCatalogo() {
 function agSalvarCatalogo() { kvSet('ag_catalogo', agCatalogo); }
 
 function agAbrirCatalogo() {
-  agCarregarCatalogo().then(function(){ agRenderCatalogo(); });
-  document.getElementById('ag-catalogo-modal').style.display = 'flex';
-  document.getElementById('ag-cat-item-desc').value = '';
-  document.getElementById('ag-cat-item-val').value = '';
-  document.getElementById('ag-cat-item-link').value = '';
+  // Só carrega do KV se ainda não carregou
+  var abrir = function() {
+    document.getElementById('ag-catalogo-modal').style.display = 'flex';
+    document.getElementById('ag-cat-item-desc').value = '';
+    document.getElementById('ag-cat-item-val').value = '';
+    document.getElementById('ag-cat-item-link').value = '';
+    agRenderCatalogo();
+  };
+  if (agCatalogo.length === 0) {
+    agCarregarCatalogo().then(abrir);
+  } else {
+    abrir();
+  }
 }
 
 function agRenderCatalogo() {
