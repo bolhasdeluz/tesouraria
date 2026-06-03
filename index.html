@@ -219,8 +219,6 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
 <nav class="nav">
   <button class="nav-btn active" onclick="showPanel('painel-inicio', this)">Início</button>
-  <button class="nav-btn" onclick="showPanel('painel-entrada', this)">+ Entrada</button>
-  <button class="nav-btn" onclick="showPanel('painel-gasto', this)">+ Gasto</button>
   <button class="nav-btn" onclick="showPanel('painel-historico', this)">Histórico</button>
   <button class="nav-btn" onclick="showPanel('painel-resumo', this)">Resumo</button>
 </nav>
@@ -254,95 +252,6 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     <div id="lista-recente"></div>
   </div>
 
-  <!-- ENTRADA -->
-  <div id="painel-entrada" class="panel">
-    <div class="form-card">
-      <div class="form-card-bar entrada"><span class="form-card-icon">💚</span><span class="form-card-title">Registrar Entrada</span></div>
-      <div class="form-body">
-
-        <!-- Toggle Membro / Extra -->
-        <div style="display:flex;gap:6px;">
-          <button id="toggle-membro" onclick="setEntradaTipo('membro')" style="flex:1;background:var(--green);border:none;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.07em;padding:9px;cursor:pointer;transition:all .2s;">👥 Membro</button>
-          <button id="toggle-extra" onclick="setEntradaTipo('extra')" style="flex:1;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.07em;padding:9px;cursor:pointer;transition:all .2s;">✨ Extra</button>
-        </div>
-
-        <!-- Campo membro -->
-        <div id="campo-membro" class="field"><label class="field-label">Membro</label>
-          <select id="entrada-membro">
-            <option value="">Selecionar membro…</option>
-            <option>Ness</option><option>Thali</option><option>Jaque</option><option>Tassi</option>
-            <option>Brenda</option><option>Anne</option><option>Vitória</option><option>Manu</option>
-            <option>Juliana</option><option>Gabi</option><option>Márcia</option><option>Nicole</option><option>Stephani</option>
-          </select>
-        </div>
-
-        <!-- Campo extra -->
-        <div id="campo-extra" class="field" style="display:none;"><label class="field-label">Descrição</label>
-          <input type="text" id="entrada-extra-desc" placeholder="Ex: Doação, Rifa, Venda de vela…">
-        </div>
-
-        <div class="field-row">
-          <div class="field"><label class="field-label">Valor (R$)</label><input type="number" id="entrada-valor" placeholder="0,00" min="0" step="0.01"></div>
-          <div class="field"><label class="field-label">Data pagamento</label><input type="date" id="entrada-data"></div>
-        </div>
-        <div class="field"><label class="field-label">Mês de competência</label>
-          <select id="entrada-competencia">
-            <option value="">Mesmo mês do pagamento</option>
-            <option value="2025-01">Janeiro/2025</option><option value="2025-02">Fevereiro/2025</option>
-            <option value="2025-03">Março/2025</option><option value="2025-04">Abril/2025</option>
-            <option value="2025-05">Maio/2025</option><option value="2025-06">Junho/2025</option>
-            <option value="2025-07">Julho/2025</option><option value="2025-08">Agosto/2025</option>
-            <option value="2025-09">Setembro/2025</option><option value="2025-10">Outubro/2025</option>
-            <option value="2025-11">Novembro/2025</option><option value="2025-12">Dezembro/2025</option>
-            <option value="2026-01">Janeiro/2026</option><option value="2026-02">Fevereiro/2026</option>
-            <option value="2026-03">Março/2026</option><option value="2026-04">Abril/2026</option>
-            <option value="2026-05">Maio/2026</option><option value="2026-06">Junho/2026</option>
-            <option value="2026-07">Julho/2026</option><option value="2026-08">Agosto/2026</option>
-            <option value="2026-09">Setembro/2026</option><option value="2026-10">Outubro/2026</option>
-            <option value="2026-11">Novembro/2026</option><option value="2026-12">Dezembro/2026</option>
-          </select>
-        </div>
-        <div class="field"><label class="field-label">Observação</label><input type="text" id="entrada-obs" placeholder="Opcional…"></div>
-        <button class="btn-primary entrada-btn" onclick="salvarEntrada()">Registrar Entrada</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- GASTO -->
-  <div id="painel-gasto" class="panel">
-    <div class="form-card">
-      <div class="form-card-bar gasto"><span class="form-card-icon">📋</span><span class="form-card-title">Registrar Gasto</span>
-        <button onclick="abrirPendente()" style="margin-left:auto;background:rgba(184,64,64,.1);border:1px solid rgba(184,64,64,.25);border-radius:20px;color:var(--red);font-family:'Cinzel',serif;font-size:9px;font-weight:700;letter-spacing:.07em;padding:4px 10px;cursor:pointer;white-space:nowrap;">🔴 Pendente</button>
-      </div>
-      <div class="form-body">
-        <div class="field"><label class="field-label">Conta</label>
-          <select id="gasto-conta">
-            <option value="">Selecionar conta…</option>
-            <option>Luz</option><option>Água</option><option>Alarme Serviço</option><option>Internet</option>
-            <option>Aluguel</option><option>Tambor</option><option>Agosto</option><option>Extras</option>
-          </select>
-        </div>
-        <div class="field-row">
-          <div class="field"><label class="field-label">Valor (R$)</label><input type="number" id="gasto-valor" placeholder="0,00" min="0" step="0.01"></div>
-          <div class="field"><label class="field-label">Data</label><input type="date" id="gasto-data"></div>
-        </div>
-        <div class="field"><label class="field-label">Observação</label><input type="text" id="gasto-obs" placeholder="Opcional…"></div>
-        <div class="field"><label class="field-label">Comprovante</label>
-          <div class="upload-area" id="upload-area">
-            <input type="file" id="gasto-comprovante" accept="image/*,.pdf" onchange="handleFile(this)">
-            <div class="upload-icon">📎</div>
-            <div class="upload-text">Toque para anexar<br><strong>foto ou PDF</strong></div>
-          </div>
-          <div class="upload-preview" id="upload-preview">
-            <span>📄</span><span class="upload-preview-name" id="upload-nome"></span>
-            <button class="upload-remove" onclick="removerArquivo()">✕</button>
-          </div>
-        </div>
-        <button class="btn-primary" onclick="salvarGasto()">Registrar Gasto</button>
-      </div>
-    </div>
-  </div>
-
   <!-- HISTÓRICO -->
   <div id="painel-historico" class="panel">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -362,6 +271,22 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     <div class="resumo-table" id="resumo-contas"><div class="rt-header"><div class="rt-header-text">Gastos por Conta</div></div></div>
   </div>
 
+</div>
+
+<!-- FAB botão lançar -->
+<div id="fab-container" style="position:fixed;bottom:24px;right:20px;z-index:250;display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
+  <div id="fab-menu" style="display:none;flex-direction:column;gap:8px;align-items:flex-end;">
+    <button onclick="abrirLancamentoModal('gasto')" style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:8px 16px 8px 12px;box-shadow:0 4px 16px rgba(180,60,90,.15);cursor:pointer;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--red);">
+      <span style="width:28px;height:28px;background:var(--red-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;">🧾</span> Gasto
+    </button>
+    <button onclick="abrirLancamentoModal('pendente')" style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:8px 16px 8px 12px;box-shadow:0 4px 16px rgba(180,60,90,.15);cursor:pointer;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--red);">
+      <span style="width:28px;height:28px;background:rgba(184,64,64,.08);border-radius:50%;display:flex;align-items:center;justify-content:center;">🔴</span> Pendente
+    </button>
+    <button onclick="abrirLancamentoModal('entrada')" style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:8px 16px 8px 12px;box-shadow:0 4px 16px rgba(180,60,90,.15);cursor:pointer;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--green);">
+      <span style="width:28px;height:28px;background:var(--green-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;">💚</span> Entrada
+    </button>
+  </div>
+  <button id="fab-btn" onclick="toggleFab()" style="width:52px;height:52px;background:linear-gradient(135deg,#c0405a,#e07a90);border:none;border-radius:50%;color:#fff;font-size:1.5rem;box-shadow:0 4px 20px rgba(196,57,107,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s;">＋</button>
 </div>
 
 <!-- WPP MODAL -->
@@ -581,6 +506,118 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   </div>
 </div>
 
+<!-- MODAL LANÇAMENTO (bottom sheet unificado) -->
+<div class="modal-overlay" id="lancamento-overlay" onclick="fecharModal('lancamento-overlay',event)">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <div class="modal-title" id="lancamento-modal-title">Novo Lançamento</div>
+      <button class="modal-close" onclick="document.getElementById('lancamento-overlay').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- ENTRADA -->
+      <div id="ls-entrada">
+        <div style="display:flex;gap:6px;margin-bottom:4px;">
+          <button id="toggle-membro" onclick="setEntradaTipo('membro')" style="flex:1;background:var(--green);border:none;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.07em;padding:9px;cursor:pointer;transition:all .2s;">👥 Membro</button>
+          <button id="toggle-extra" onclick="setEntradaTipo('extra')" style="flex:1;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.07em;padding:9px;cursor:pointer;transition:all .2s;">✨ Extra</button>
+        </div>
+        <div id="campo-membro" class="field"><label class="field-label">Membro</label>
+          <select id="entrada-membro">
+            <option value="">Selecionar membro…</option>
+            <option>Ness</option><option>Thali</option><option>Jaque</option><option>Tassi</option>
+            <option>Brenda</option><option>Anne</option><option>Vitória</option><option>Manu</option>
+            <option>Juliana</option><option>Gabi</option><option>Márcia</option><option>Nicole</option><option>Stephani</option>
+          </select>
+        </div>
+        <div id="campo-extra" class="field" style="display:none;"><label class="field-label">Descrição</label>
+          <input type="text" id="entrada-extra-desc" placeholder="Ex: Doação, Rifa, Venda de vela…">
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Valor (R$)</label><input type="number" id="entrada-valor" placeholder="0,00" min="0" step="0.01"></div>
+          <div class="field"><label class="field-label">Data pagamento</label><input type="date" id="entrada-data"></div>
+        </div>
+        <div class="field"><label class="field-label">Mês de competência</label>
+          <select id="entrada-competencia">
+            <option value="">Mesmo mês do pagamento</option>
+            <option value="2025-01">Janeiro/2025</option><option value="2025-02">Fevereiro/2025</option>
+            <option value="2025-03">Março/2025</option><option value="2025-04">Abril/2025</option>
+            <option value="2025-05">Maio/2025</option><option value="2025-06">Junho/2025</option>
+            <option value="2025-07">Julho/2025</option><option value="2025-08">Agosto/2025</option>
+            <option value="2025-09">Setembro/2025</option><option value="2025-10">Outubro/2025</option>
+            <option value="2025-11">Novembro/2025</option><option value="2025-12">Dezembro/2025</option>
+            <option value="2026-01">Janeiro/2026</option><option value="2026-02">Fevereiro/2026</option>
+            <option value="2026-03">Março/2026</option><option value="2026-04">Abril/2026</option>
+            <option value="2026-05">Maio/2026</option><option value="2026-06">Junho/2026</option>
+            <option value="2026-07">Julho/2026</option><option value="2026-08">Agosto/2026</option>
+            <option value="2026-09">Setembro/2026</option><option value="2026-10">Outubro/2026</option>
+            <option value="2026-11">Novembro/2026</option><option value="2026-12">Dezembro/2026</option>
+          </select>
+        </div>
+        <div class="field"><label class="field-label">Observação</label><input type="text" id="entrada-obs" placeholder="Opcional…"></div>
+        <button class="btn-primary entrada-btn" onclick="salvarEntrada()">Registrar Entrada</button>
+      </div>
+
+      <!-- GASTO -->
+      <div id="ls-gasto" style="display:none;">
+        <div class="field"><label class="field-label">Conta</label>
+          <select id="gasto-conta">
+            <option value="">Selecionar conta…</option>
+            <option>Luz</option><option>Água</option><option>Alarme Serviço</option><option>Internet</option>
+            <option>Aluguel</option><option>Tambor</option><option>Agosto</option><option>Extras</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Valor (R$)</label><input type="number" id="gasto-valor" placeholder="0,00" min="0" step="0.01"></div>
+          <div class="field"><label class="field-label">Data</label><input type="date" id="gasto-data"></div>
+        </div>
+        <div class="field"><label class="field-label">Observação</label><input type="text" id="gasto-obs" placeholder="Opcional…"></div>
+        <div class="field"><label class="field-label">Comprovante</label>
+          <div class="upload-area" id="upload-area">
+            <input type="file" id="gasto-comprovante" accept="image/*,.pdf" onchange="handleFile(this)">
+            <div class="upload-icon">📎</div>
+            <div class="upload-text">Toque para anexar<br><strong>foto ou PDF</strong></div>
+          </div>
+          <div class="upload-preview" id="upload-preview">
+            <span>📄</span><span class="upload-preview-name" id="upload-nome"></span>
+            <button class="upload-remove" onclick="removerArquivo()">✕</button>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="salvarGasto()">Registrar Gasto</button>
+      </div>
+
+      <!-- PENDENTE -->
+      <div id="ls-pendente" style="display:none;">
+        <div style="background:var(--red-dim);border:1px solid rgba(184,64,64,.2);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:.78rem;color:var(--red);margin-bottom:4px;">Conta a pagar — aparece no histórico como pendente.</div>
+        <div class="field"><label class="field-label">Conta</label>
+          <select id="pend-conta">
+            <option value="">Selecionar conta…</option>
+            <option>Luz</option><option>Água</option><option>Alarme Serviço</option><option>Internet</option>
+            <option>Aluguel</option><option>Tambor</option><option>Agosto</option><option>Extras</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Valor (R$)</label><input type="number" id="pend-valor" placeholder="0,00" min="0" step="0.01"></div>
+          <div class="field"><label class="field-label">Vencimento</label><input type="date" id="pend-vencimento"></div>
+        </div>
+        <div class="field"><label class="field-label">Observação</label><input type="text" id="pend-obs" placeholder="Opcional…"></div>
+        <div class="field"><label class="field-label">Comprovante / Boleto</label>
+          <div class="upload-area" id="pend-upload-area">
+            <input type="file" id="pend-comprovante-file" accept="image/*,.pdf" onchange="handlePendFile(this)">
+            <div class="upload-icon">📎</div>
+            <div class="upload-text">Toque para anexar<br><strong>boleto, foto ou PDF</strong></div>
+          </div>
+          <div class="upload-preview" id="pend-upload-preview">
+            <span>📄</span><span class="upload-preview-name" id="pend-upload-nome"></span>
+            <button class="upload-remove" onclick="removerPendArquivo()">✕</button>
+          </div>
+        </div>
+        <button class="btn-primary" style="background:var(--red);" onclick="salvarPendente()">Salvar como Pendente</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -766,6 +803,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     document.getElementById('entrada-data').value = today();
     document.getElementById('entrada-competencia').value = '';
     showToast('Entrada registrada ✓');
+    document.getElementById('lancamento-overlay').classList.remove('open');
     renderInicio();
   }
 
@@ -800,6 +838,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     document.getElementById('gasto-data').value = today();
     removerArquivo();
     showToast('Gasto registrado ✓');
+    document.getElementById('lancamento-overlay').classList.remove('open');
     renderInicio();
   }
 
@@ -845,7 +884,54 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       + '</div></div>';
   }
 
-  // ── FILTRO DE MÊS ─────────────────────────────────────────
+  // ── FAB ───────────────────────────────────────────────────
+  var fabAberto = false;
+
+  function toggleFab() {
+    fabAberto = !fabAberto;
+    var menu = document.getElementById('fab-menu');
+    var btn = document.getElementById('fab-btn');
+    menu.style.display = fabAberto ? 'flex' : 'none';
+    btn.style.transform = fabAberto ? 'rotate(45deg)' : 'rotate(0)';
+  }
+
+  function abrirLancamentoModal(tipo) {
+    fabAberto = false;
+    document.getElementById('fab-menu').style.display = 'none';
+    document.getElementById('fab-btn').style.transform = 'rotate(0)';
+
+    // Esconde tudo
+    document.getElementById('ls-entrada').style.display = 'none';
+    document.getElementById('ls-gasto').style.display = 'none';
+    document.getElementById('ls-pendente').style.display = 'none';
+
+    var titulo = { entrada: '💚 Nova Entrada', gasto: '🧾 Novo Gasto', pendente: '🔴 Conta Pendente' };
+    document.getElementById('lancamento-modal-title').textContent = titulo[tipo];
+    document.getElementById('ls-' + tipo).style.display = 'block';
+
+    // Reset campos
+    if (tipo === 'entrada') {
+      document.getElementById('entrada-data').value = today();
+      document.getElementById('entrada-competencia').value = '';
+      setEntradaTipo('membro');
+    } else if (tipo === 'gasto') {
+      document.getElementById('gasto-data').value = today();
+      removerArquivo();
+    } else if (tipo === 'pendente') {
+      document.getElementById('pend-vencimento').value = today();
+      removerPendArquivo();
+    }
+    document.getElementById('lancamento-overlay').classList.add('open');
+  }
+
+  // Fecha FAB ao clicar fora
+  document.addEventListener('click', function(e) {
+    if (fabAberto && !document.getElementById('fab-container').contains(e.target)) {
+      fabAberto = false;
+      document.getElementById('fab-menu').style.display = 'none';
+      document.getElementById('fab-btn').style.transform = 'rotate(0)';
+    }
+  });
   var MESES_NOMES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   var filtroMesAtivo = null; // null = todos, 'YYYY-MM' = mês específico
 
@@ -1503,7 +1589,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     if (!valor || valor <= 0) { showToast('Informe o valor'); return; }
     lancamentos.unshift({ id: Date.now(), tipo: 'gasto', conta: conta, valor: valor, data: venc, vencimento: venc, obs: obs, comprovante: pendArquivoAnexo, status: 'pendente' });
     save();
-    document.getElementById('pendente-overlay').classList.remove('open');
+    document.getElementById('lancamento-overlay').classList.remove('open');
     removerPendArquivo();
     showToast('Pendente registrado 🔴');
     renderInicio();
