@@ -1806,9 +1806,9 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     .ag-aves-row:last-child { border-bottom:none; }
     .ag-aves-val { font-family:'Crimson Pro',serif; font-weight:600; color:#2a7a60; }
     /* Modal de gasto Agosto */
-    .ag-gasto-modal-overlay { display:none; position:fixed; inset:0; background:rgba(40,10,20,.55); backdrop-filter:blur(4px); z-index:600; align-items:flex-end; justify-content:center; }
+    .ag-gasto-modal-overlay { display:none; position:fixed; inset:0; background:rgba(40,10,20,.55); backdrop-filter:blur(4px); z-index:600; align-items:flex-start; justify-content:center; padding-top:60px; }
     .ag-gasto-modal-overlay.open { display:flex; }
-    .ag-gasto-modal { background:#fff; border:1px solid rgba(196,57,107,.15); border-top:3px solid #c4396b; border-radius:12px 12px 0 0; padding:18px; width:100%; max-width:500px; animation:slideUp .25s ease; }
+    .ag-gasto-modal { background:#fff; border:1px solid rgba(196,57,107,.15); border-bottom:3px solid #c4396b; border-radius:0 0 12px 12px; padding:18px; width:100%; max-width:500px; animation:slideDown .25s ease; max-height:85vh; overflow-y:auto; }
     .ag-gasto-modal h3 { font-family:'Cinzel',serif; font-size:.78rem; letter-spacing:.1em; text-transform:uppercase; color:#c4396b; margin-bottom:13px; }
     .ag-form-row { margin-bottom:9px; }
     .ag-form-row label { font-family:'Cinzel',serif; font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:rgba(80,30,50,.5); display:block; margin-bottom:3px; }
@@ -1911,8 +1911,8 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   <div style="height:40px;"></div>
 
   <!-- Modal editar item orçamento -->
-  <div id="ag-edit-item-modal" style="display:none;position:fixed;inset:0;background:rgba(40,10,20,.6);backdrop-filter:blur(4px);z-index:600;align-items:flex-end;justify-content:center;">
-    <div style="background:#fff;border:1px solid rgba(196,57,107,.15);border-top:3px solid #c4396b;border-radius:16px 16px 0 0;width:100%;max-width:500px;padding:18px;animation:slideUp .25s ease;">
+  <div id="ag-edit-item-modal" style="display:none;position:fixed;inset:0;background:rgba(40,10,20,.6);backdrop-filter:blur(4px);z-index:600;align-items:flex-start;justify-content:center;padding-top:60px;">
+    <div style="background:#fff;border:1px solid rgba(196,57,107,.15);border-bottom:3px solid #c4396b;border-radius:0 0 16px 16px;width:100%;max-width:500px;padding:18px;animation:slideDown .25s ease;max-height:85vh;overflow-y:auto;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <div>
           <div style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2a1a22;">✏️ Editar Item</div>
@@ -1948,8 +1948,8 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   </div>
 
   <!-- Modal Catálogo -->
-  <div id="ag-catalogo-modal" style="display:none;position:fixed;inset:0;background:rgba(40,10,20,.6);backdrop-filter:blur(4px);z-index:600;align-items:flex-end;justify-content:center;">
-    <div style="background:#fff;border:1px solid rgba(196,57,107,.15);border-top:3px solid #c88c00;border-radius:16px 16px 0 0;width:100%;max-width:500px;max-height:85vh;display:flex;flex-direction:column;animation:slideUp .25s ease;">
+  <div id="ag-catalogo-modal" style="display:none;position:fixed;inset:0;background:rgba(40,10,20,.6);backdrop-filter:blur(4px);z-index:600;align-items:flex-start;justify-content:center;padding-top:60px;">
+    <div style="background:#fff;border:1px solid rgba(196,57,107,.15);border-bottom:3px solid #c88c00;border-radius:0 0 16px 16px;width:100%;max-width:500px;max-height:85vh;display:flex;flex-direction:column;animation:slideDown .25s ease;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid rgba(196,57,107,.1);flex-shrink:0;">
         <span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2a1a22;">📚 Catálogo de Itens</span>
         <button onclick="document.getElementById('ag-catalogo-modal').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:rgba(80,30,50,.5);">✕</button>
@@ -1969,8 +1969,8 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   </div>
 
   <!-- Modal WPP próprio do Agosto -->
-  <div id="ag-wpp-modal" style="display:none;position:fixed;inset:0;background:rgba(40,10,20,.6);backdrop-filter:blur(4px);z-index:600;align-items:flex-end;justify-content:center;">
-    <div style="background:#fff;border:1px solid rgba(196,57,107,.15);border-top:3px solid #c4396b;border-radius:16px 16px 0 0;width:100%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1) both;">
+  <div id="ag-wpp-modal" style="display:none;position:fixed;inset:0;background:rgba(40,10,20,.6);backdrop-filter:blur(4px);z-index:600;align-items:flex-start;justify-content:center;padding-top:60px;">
+    <div style="background:#fff;border:1px solid rgba(196,57,107,.15);border-bottom:3px solid #c4396b;border-radius:0 0 16px 16px;width:100%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;animation:slideDown .3s cubic-bezier(.34,1.56,.64,1) both;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid rgba(196,57,107,.1);">
         <span style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2a1a22;">💬 WhatsApp — Agosto</span>
         <button onclick="document.getElementById('ag-wpp-modal').style.display='none';" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:rgba(80,30,50,.5);">✕</button>
