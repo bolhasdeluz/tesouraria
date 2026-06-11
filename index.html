@@ -242,26 +242,49 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
     <div class="saldo-card">
       <div class="saldo-label" id="saldo-label-mes">Saldo atual</div>
-      <div class="saldo-valor" id="saldo-display">R$ 0,00</div>
-      <div class="saldo-row">
-        <div class="saldo-mini"><div class="saldo-mini-label">↑ Entradas</div><div class="saldo-mini-val" id="total-entradas-display">R$ 0,00</div></div>
-        <div class="saldo-mini"><div class="saldo-mini-label">↓ Gastos</div><div class="saldo-mini-val" id="total-gastos-display">R$ 0,00</div></div>
+
+      <!-- Modo com filtro de mês: destaca % -->
+      <div id="card-modo-mes" style="display:none;">
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <div style="flex:1;background:rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;text-align:center;">
+            <div style="font-family:'DM Sans',sans-serif;font-size:.65rem;color:rgba(255,255,255,.6);margin-bottom:2px;">👥 Pagantes</div>
+            <div id="stat-pgtos-destaque" style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:600;color:#fff;line-height:1;">0%</div>
+            <div id="stat-pgtos-sub" style="font-family:'DM Sans',sans-serif;font-size:.65rem;color:rgba(255,255,255,.55);margin-top:2px;"></div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;text-align:center;">
+            <div style="font-family:'DM Sans',sans-serif;font-size:.65rem;color:rgba(255,255,255,.6);margin-bottom:2px;">💰 Coberto</div>
+            <div id="stat-cobertura-destaque" style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:600;color:#fff;line-height:1;">0%</div>
+            <div id="stat-cobertura-sub" style="font-family:'DM Sans',sans-serif;font-size:.65rem;color:rgba(255,255,255,.55);margin-top:2px;"></div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.15);border-radius:4px;height:3px;overflow:hidden;margin-top:10px;">
+          <div id="stat-bar-cobertura" style="height:100%;border-radius:4px;transition:width .4s;width:0%;background:rgba(255,255,255,.85);"></div>
+        </div>
+        <!-- Saldo negativo discreto -->
+        <div id="stat-saldo-linha" style="display:none;margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-family:'DM Sans',sans-serif;font-size:.68rem;color:rgba(255,255,255,.45);">coberto pela mãe de santo 🕯️</span>
+          <span id="stat-saldo-val" style="font-family:'Crimson Pro',serif;font-size:.88rem;font-weight:600;color:rgba(255,255,255,.6);"></span>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:10px;">
+          <div style="flex:1;background:rgba(255,255,255,.1);border-radius:7px;padding:7px 10px;">
+            <div style="font-family:'DM Sans',sans-serif;font-size:.62rem;color:rgba(255,255,255,.55);">↑ Entradas</div>
+            <div id="total-entradas-display" style="font-family:'Crimson Pro',serif;font-size:.95rem;font-weight:600;color:#fff;">R$ 0,00</div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,.1);border-radius:7px;padding:7px 10px;">
+            <div style="font-family:'DM Sans',sans-serif;font-size:.62rem;color:rgba(255,255,255,.55);">↓ Gastos</div>
+            <div id="total-gastos-display" style="font-family:'Crimson Pro',serif;font-size:.95rem;font-weight:600;color:#fff;">R$ 0,00</div>
+          </div>
+        </div>
+        <div id="stat-nao-pagaram" style="margin-top:7px;font-family:'DM Sans',sans-serif;font-size:.67rem;color:rgba(255,255,255,.45);"></div>
       </div>
-      <!-- Stats mensalidade -->
-      <div id="stats-mensalidade" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.15);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-          <div style="font-family:'DM Sans',sans-serif;font-size:.7rem;color:rgba(255,255,255,.65);">
-            Mensalidade: <span id="stat-pgtos" style="color:#fff;font-weight:600;font-family:'Crimson Pro',serif;font-size:.9rem;"></span>
-            <span id="stat-pct-pessoas" style="color:rgba(255,255,255,.55);font-size:.68rem;margin-left:3px;"></span>
-          </div>
-          <div style="font-family:'DM Sans',sans-serif;font-size:.7rem;color:rgba(255,255,255,.65);">
-            Entradas/Gastos: <span id="stat-pct-valor" style="color:#fff;font-weight:600;font-family:'Crimson Pro',serif;font-size:.9rem;"></span>
-          </div>
+
+      <!-- Modo sem filtro: mostra saldo total -->
+      <div id="card-modo-total">
+        <div class="saldo-valor" id="saldo-display">R$ 0,00</div>
+        <div class="saldo-row">
+          <div class="saldo-mini"><div class="saldo-mini-label">↑ Entradas</div><div class="saldo-mini-val" id="total-entradas-display-total">R$ 0,00</div></div>
+          <div class="saldo-mini"><div class="saldo-mini-label">↓ Gastos</div><div class="saldo-mini-val" id="total-gastos-display-total">R$ 0,00</div></div>
         </div>
-        <div style="background:rgba(255,255,255,.2);border-radius:4px;height:3px;overflow:hidden;">
-          <div id="stat-bar-pessoas" style="height:100%;border-radius:4px;transition:width .4s;width:0%;background:rgba(255,255,255,.8);"></div>
-        </div>
-        <div id="stat-nao-pagaram" style="margin-top:6px;font-family:'DM Sans',sans-serif;font-size:.68rem;color:rgba(255,255,255,.5);"></div>
       </div>
     </div>
     <div id="saldo-nota-mae" style="display:none;text-align:right;margin-top:-8px;margin-bottom:6px;padding-right:4px;font-family:'Crimson Pro',serif;font-style:italic;font-size:.78rem;color:var(--text-dim);">coberto pela mãe de santo 🕯️</div>
@@ -280,13 +303,8 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 
   <!-- HISTÓRICO -->
   <div id="painel-historico" class="panel">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-      <div class="filter-bar" style="margin-bottom:0;flex:1;">
-        <button class="fbtn active" onclick="setFiltro('todos', this)">Todos</button>
-        <button class="fbtn verde" onclick="setFiltro('entrada', this)">Entradas</button>
-        <button class="fbtn" onclick="setFiltro('gasto', this)">Gastos</button>
-      </div>
-      <button onclick="abrirLote()" style="flex-shrink:0;margin-left:8px;background:linear-gradient(135deg,#2a7a60,#3a9a78);border:none;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.07em;padding:7px 12px;cursor:pointer;white-space:nowrap;">🗂️ Lote</button>
+    <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px;">
+      <button onclick="abrirLote()" style="background:linear-gradient(135deg,#2a7a60,#3a9a78);border:none;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.07em;padding:7px 12px;cursor:pointer;white-space:nowrap;">🗂️ Lote</button>
     </div>
     <div id="lista-historico"></div>
   </div>
@@ -991,43 +1009,53 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     var lista = lancamentosDoMes(filtroMesAtivo);
     var totalE = lista.filter(function(l){ return l.tipo === 'entrada'; }).reduce(function(a,l){ return a + l.valor; }, 0);
     var totalG = lista.filter(function(l){ return l.tipo === 'gasto'; }).reduce(function(a,l){ return a + l.valor; }, 0);
-    document.getElementById('saldo-display').textContent = fmt(totalE - totalG);
-    document.getElementById('total-entradas-display').textContent = fmt(totalE);
-    document.getElementById('total-gastos-display').textContent = fmt(totalG);
-    // Label dinâmico
-    document.getElementById('saldo-label-mes').textContent = filtroMesAtivo
-      ? 'Saldo — ' + MESES_NOMES_FULL[parseInt(filtroMesAtivo.split('-')[1]) - 1]
-      : 'Saldo acumulado';
-    // Nota discreta quando negativo
-    var notaEl = document.getElementById('saldo-nota-mae');
-    if (totalE - totalG < 0) {
-      notaEl.style.display = 'block';
-    } else {
-      notaEl.style.display = 'none';
-    }
-    // Stats mensalidade — só mostra quando há filtro de mês ativo
-    var MEMBROS_FIXOS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
-    var statsEl = document.getElementById('stats-mensalidade');
-    if (filtroMesAtivo) {
-      var entradasMembros = lista.filter(function(l){ return l.tipo==='entrada' && l.subTipo !== 'extra'; });
-      var pagaram = {};
-      entradasMembros.forEach(function(l){ if (l.membro) pagaram[l.membro] = true; });
-      var nPagaram = Object.keys(pagaram).length;
-      var nTotal = MEMBROS_FIXOS.length;
-      var pctPessoas = Math.round(nPagaram / nTotal * 100);
-      var naoPagaram = MEMBROS_FIXOS.filter(function(m){ return !pagaram[m]; });
-      var pctValor = totalG > 0 ? Math.round(totalE / totalG * 100) : (totalE > 0 ? 100 : 0);
+    var saldo = totalE - totalG;
 
-      document.getElementById('stat-pgtos').textContent = nPagaram + '/' + nTotal;
-      document.getElementById('stat-pct-pessoas').textContent = '(' + pctPessoas + '%)';
-      document.getElementById('stat-pct-valor').textContent = pctValor + '%';
-      document.getElementById('stat-bar-pessoas').style.width = pctPessoas + '%';
-      document.getElementById('stat-nao-pagaram').textContent = naoPagaram.length
-        ? 'Faltam: ' + naoPagaram.join(', ')
-        : '✓ Todos pagaram!';
-      statsEl.style.display = 'block';
+    var MEMBROS_FIXOS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
+
+    if (filtroMesAtivo) {
+      // Modo mês: mostra % em destaque
+      document.getElementById('card-modo-mes').style.display = 'block';
+      document.getElementById('card-modo-total').style.display = 'none';
+      document.getElementById('saldo-label-mes').textContent = MESES_NOMES_FULL[parseInt(filtroMesAtivo.split('-')[1])-1] + ' ' + filtroMesAtivo.split('-')[0];
+
+      var entradasMembros = lista.filter(function(l){ return l.tipo==='entrada' && l.subTipo!=='extra'; });
+      var pagaram = {};
+      entradasMembros.forEach(function(l){ if(l.membro) pagaram[l.membro]=true; });
+      var nPag = Object.keys(pagaram).length;
+      var nTot = MEMBROS_FIXOS.length;
+      var pctPag = Math.round(nPag/nTot*100);
+      var pctCob = totalG>0 ? Math.round(totalE/totalG*100) : (totalE>0?100:0);
+      var naoPag = MEMBROS_FIXOS.filter(function(m){ return !pagaram[m]; });
+
+      document.getElementById('stat-pgtos-destaque').textContent = pctPag + '%';
+      document.getElementById('stat-pgtos-sub').textContent = nPag + '/' + nTot + ' membros';
+      document.getElementById('stat-cobertura-destaque').textContent = pctCob + '%';
+      document.getElementById('stat-cobertura-sub').textContent = fmt(totalE) + ' / ' + fmt(totalG);
+      document.getElementById('stat-bar-cobertura').style.width = Math.min(pctCob,100) + '%';
+      document.getElementById('total-entradas-display').textContent = fmt(totalE);
+      document.getElementById('total-gastos-display').textContent = fmt(totalG);
+      document.getElementById('stat-nao-pagaram').textContent = naoPag.length ? 'Faltam: ' + naoPag.join(', ') : '✓ Todas pagaram!';
+
+      // Saldo negativo discreto
+      var saldoLinha = document.getElementById('stat-saldo-linha');
+      if (saldo < 0) {
+        saldoLinha.style.display = 'flex';
+        document.getElementById('stat-saldo-val').textContent = fmt(saldo);
+      } else {
+        saldoLinha.style.display = 'none';
+      }
+      document.getElementById('saldo-nota-mae').style.display = 'none';
+
     } else {
-      statsEl.style.display = 'none';
+      // Modo total: mostra saldo acumulado
+      document.getElementById('card-modo-mes').style.display = 'none';
+      document.getElementById('card-modo-total').style.display = 'block';
+      document.getElementById('saldo-label-mes').textContent = 'Saldo acumulado';
+      document.getElementById('saldo-display').textContent = fmt(saldo);
+      document.getElementById('total-entradas-display-total').textContent = fmt(totalE);
+      document.getElementById('total-gastos-display-total').textContent = fmt(totalG);
+      document.getElementById('saldo-nota-mae').style.display = saldo < 0 ? 'block' : 'none';
     }
     // Aplica filtro de tipo
     var listaTipo = lista;
@@ -1061,7 +1089,9 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       if (l.tipo==='gasto' && l.status !== 'pendente') meses[ref].g += l.valor;
     });
 
-    var mesesOrdenados = Object.keys(meses).sort().reverse();
+    var agora = new Date();
+    var mesAtualStr = agora.getFullYear() + '-' + String(agora.getMonth()+1).padStart(2,'0');
+    var mesesOrdenados = Object.keys(meses).filter(function(m){ return m <= mesAtualStr; }).sort().reverse();
     var panoramaHTML = '';
     if (mesesOrdenados.length) {
       panoramaHTML = '<div style="margin-bottom:14px;">'
@@ -1191,14 +1221,40 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       elM.innerHTML = html;
     }
 
-    // ── Gastos por conta (mantém) ─────────────────────────────
-    var contas = {};
-    lancamentos.filter(function(l){ return l.tipo === 'gasto'; }).forEach(function(l){ contas[l.conta] = (contas[l.conta] || 0) + l.valor; });
+    // ── Gastos por conta — média mensal ──────────────────────
+    var contasMeses = {};
+    var mesesComGasto = {};
+    lancamentos.filter(function(l){ return l.tipo==='gasto' && l.status!=='pendente'; }).forEach(function(l){
+      var mes = l.data ? l.data.slice(0,7) : null;
+      if (!mes) return;
+      if (!contasMeses[l.conta]) contasMeses[l.conta] = {};
+      contasMeses[l.conta][mes] = (contasMeses[l.conta][mes]||0) + l.valor;
+      mesesComGasto[mes] = true;
+    });
     var elC = document.getElementById('resumo-contas');
-    var sortedC = Object.entries(contas).sort(function(a,b){ return b[1]-a[1]; });
-    elC.innerHTML = '<div class="rt-header"><div class="rt-header-text">Gastos por Conta</div></div>';
-    if (!sortedC.length) { elC.innerHTML += '<div class="rt-row"><div class="rt-nome" style="font-style:italic;color:var(--text-dim)">Nenhum gasto</div></div>'; }
-    else sortedC.forEach(function(e){ elC.innerHTML += '<div class="rt-row"><div class="rt-nome">' + e[0] + '</div><div class="rt-val" style="color:var(--red)">' + fmt(e[1]) + '</div></div>'; });
+    elC.innerHTML = '<div class="rt-header"><div class="rt-header-text">Gastos por Conta — Média Mensal</div></div>';
+    if (!Object.keys(contasMeses).length) {
+      elC.innerHTML += '<div class="rt-row"><div class="rt-nome" style="font-style:italic;color:var(--text-dim)">Nenhum gasto</div></div>';
+    } else {
+      var totalMeses = Object.keys(mesesComGasto).length || 1;
+      var contasOrdenadas = Object.keys(contasMeses).sort(function(a,b){
+        var totA = Object.values(contasMeses[a]).reduce(function(s,v){return s+v;},0);
+        var totB = Object.values(contasMeses[b]).reduce(function(s,v){return s+v;},0);
+        return totB - totA;
+      });
+      contasOrdenadas.forEach(function(conta){
+        var mesesDaConta = Object.keys(contasMeses[conta]).length;
+        var totalConta = Object.values(contasMeses[conta]).reduce(function(s,v){return s+v;},0);
+        var media = totalConta / mesesDaConta;
+        elC.innerHTML += '<div class="rt-row">'
+          + '<div style="flex:1;">'
+          + '<div class="rt-nome">'+conta+'</div>'
+          + '<div style="font-family:\'DM Sans\',sans-serif;font-size:.68rem;color:var(--text-dim);margin-top:1px;">'+mesesDaConta+' mês'+(mesesDaConta>1?'es':'') +' · total '+fmt(totalConta)+'</div>'
+          + '</div>'
+          + '<div class="rt-val" style="color:var(--red);">'+fmt(media)+'<div style="font-family:\'DM Sans\',sans-serif;font-size:.62rem;color:var(--text-dim);font-weight:400;text-align:right;">/mês</div></div>'
+          + '</div>';
+      });
+    }
   }
 
   // ── CLONE ─────────────────────────────────────────────────
@@ -1544,15 +1600,18 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
         html += '</table>';
       }
 
-      // Gastos (sempre completo)
+      // Gastos por conta com média mensal
       html += '<h2>Gastos por Conta</h2>';
       html += '<table><tr><th>Conta</th><th>Data</th><th>Observação</th><th>Comprovante</th><th style="text-align:right">Valor</th></tr>';
       Object.keys(porConta).sort().forEach(function(c){
         var g=porConta[c];
+        var nMeses = {};
+        g.itens.forEach(function(l){ if(l.data) nMeses[l.data.slice(0,7)]=true; });
+        var media = g.total / Math.max(Object.keys(nMeses).length,1);
         g.itens.forEach(function(l,i){
           html += '<tr><td>'+(i===0?c:'')+'</td><td class="dim">'+fmtData(l.data)+'</td><td class="dim">'+(l.obs||'—')+'</td><td class="dim">'+(l.comprovante?'📎 '+l.comprovante:'—')+'</td><td class="vermelho">'+fmt(l.valor)+'</td></tr>';
         });
-        html += '<tr class="total-row"><td colspan="4">Total — '+c+'</td><td class="vermelho" style="text-align:right">'+fmt(g.total)+'</td></tr>';
+        html += '<tr class="total-row"><td colspan="3">Total — '+c+' · Média: '+fmt(media)+'/mês</td><td></td><td class="vermelho" style="text-align:right">'+fmt(g.total)+'</td></tr>';
       });
       html += '<tr class="total-row"><td colspan="4">TOTAL GASTOS</td><td class="vermelho" style="text-align:right">'+fmt(totalG)+'</td></tr>';
       html += '</table>';
@@ -1568,12 +1627,20 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       }
 
       html += '<h2>Resumo Final</h2>';
+      var MEMBROS_EXP = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
+      var pagamMes = {};
+      entradas.filter(function(l){ return l.subTipo!=='extra'; }).forEach(function(l){ if(l.membro) pagamMes[l.membro]=true; });
+      var nPagEXP = Object.keys(pagamMes).length;
+      var pctPagEXP = Math.round(nPagEXP/MEMBROS_EXP.length*100);
+      var pctCobEXP = totalG>0 ? Math.round(totalE/totalG*100) : (totalE>0?100:0);
       html += '<table><tr><th>Item</th><th style="text-align:right">Valor</th></tr>';
       html += '<tr><td>Total Entradas</td><td class="verde">'+fmt(totalE)+'</td></tr>';
       html += '<tr><td>Total Gastos</td><td class="vermelho">'+fmt(totalG)+'</td></tr>';
       if (pendentes.length) html += '<tr><td>Total Pendentes (a pagar)</td><td class="vermelho">'+fmt(totalP)+'</td></tr>';
       html += '<tr class="total-row"><td>SALDO DO PERÍODO</td><td style="text-align:right;color:'+(saldo>=0?'#2a7a60':'#b84040')+'">'+fmt(saldo)+'</td></tr>';
       if (saldo<0) html += '<tr><td colspan="2" style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:.82rem;color:rgba(80,30,50,.5);text-align:right;padding-top:6px;">coberto pela mãe de santo 🕯️</td></tr>';
+      html += '<tr><td>% Pagantes</td><td style="text-align:right;color:#2a7a60;font-weight:600;">'+nPagEXP+'/'+MEMBROS_EXP.length+' ('+pctPagEXP+'%)</td></tr>';
+      html += '<tr><td>% Cobertura (Entradas/Gastos)</td><td style="text-align:right;color:'+(pctCobEXP>=100?'#2a7a60':'#b84040')+';font-weight:600;">'+pctCobEXP+'%</td></tr>';
       html += '</table></body></html>';
 
       var win = window.open('', '_blank');
@@ -1608,12 +1675,34 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
         rows.push(['','','','TOTAL',totalE.toFixed(2),'']);
       }
       rows.push([]);
-      rows.push(['GASTOS']);
-      rows.push(['Conta','Data','Observação','Comprovante','Valor']);
+      rows.push(['GASTOS POR CONTA']);
+      rows.push(['Conta','Data','Observação','Comprovante','Valor','Média Mensal']);
+      var contaGrupos = {};
       gastos.forEach(function(l){
-        rows.push([l.conta||'—', fmtData(l.data), l.obs||'', l.comprovante||'', l.valor.toFixed(2)]);
+        if(!contaGrupos[l.conta]) contaGrupos[l.conta]={total:0,meses:{},itens:[]};
+        contaGrupos[l.conta].total+=l.valor;
+        if(l.data) contaGrupos[l.conta].meses[l.data.slice(0,7)]=true;
+        contaGrupos[l.conta].itens.push(l);
       });
-      rows.push(['','','','TOTAL',totalG.toFixed(2)]);
+      Object.keys(contaGrupos).sort().forEach(function(c){
+        var g=contaGrupos[c];
+        var nM=Math.max(Object.keys(g.meses).length,1);
+        var media=g.total/nM;
+        g.itens.forEach(function(l,i){ rows.push([l.conta||'—',fmtData(l.data),l.obs||'',l.comprovante||'',l.valor.toFixed(2),i===0?media.toFixed(2):'']); });
+        rows.push(['Total — '+c,'','','',g.total.toFixed(2),'Média: '+media.toFixed(2)+'/mês']);
+      });
+      rows.push(['TOTAL GASTOS','','','',totalG.toFixed(2),'']);
+      // % stats
+      var MEMBROS_CSV = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
+      var pagamCSV = {};
+      entradas.filter(function(l){return l.subTipo!=='extra';}).forEach(function(l){if(l.membro)pagamCSV[l.membro]=true;});
+      var nPagCSV = Object.keys(pagamCSV).length;
+      var pctPagCSV = Math.round(nPagCSV/MEMBROS_CSV.length*100);
+      var pctCobCSV = totalG>0?Math.round(totalE/totalG*100):(totalE>0?100:0);
+      rows.push([]);
+      rows.push(['% Pagantes',nPagCSV+'/'+MEMBROS_CSV.length+' ('+pctPagCSV+'%)']);
+      rows.push(['% Cobertura (Entradas/Gastos)',pctCobCSV+'%']);
+      if(saldo<0) rows.push(['Obs','coberto pela mãe de santo 🕯️']);
       if (pendentes.length) {
         rows.push([]);
         rows.push(['PENDENTES EM ABERTO']);
@@ -1667,11 +1756,25 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       msg += '🧾 *GASTOS POR CONTA*\n';
       Object.keys(porConta).sort().forEach(function(c){
         var g = porConta[c];
-        msg += '• ' + c + ': ' + fmt(g.total);
+        var nMeses = {};
+        g.itens.forEach(function(l){ if(l.data) nMeses[l.data.slice(0,7)]=true; });
+        var media = g.total / Math.max(Object.keys(nMeses).length,1);
         var comC = g.itens.filter(function(i){ return i.comprovante; }).length;
-        if (comC) msg += ' (' + comC + ' comprovante' + (comC>1?'s':'') + ')';
+        msg += '• ' + c + ': ' + fmt(g.total) + ' (média ' + fmt(media) + '/mês)';
+        if (comC) msg += ' · ' + comC + ' comprovante' + (comC>1?'s':'');
         msg += '\n';
       });
+
+      // % pagantes e cobertura
+      var MEMBROS_WPP = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
+      var pagamWPP = {};
+      entradas.filter(function(l){return l.subTipo!=='extra';}).forEach(function(l){if(l.membro)pagamWPP[l.membro]=true;});
+      var nPagWPP = Object.keys(pagamWPP).length;
+      var pctPagWPP = Math.round(nPagWPP/MEMBROS_WPP.length*100);
+      var pctCobWPP = totalG>0?Math.round(totalE/totalG*100):(totalE>0?100:0);
+      msg += '\n📊 *INDICADORES*\n';
+      msg += '👥 Pagantes: *'+nPagWPP+'/'+MEMBROS_WPP.length+' ('+pctPagWPP+'%)*\n';
+      msg += '💰 Cobertura: *'+pctCobWPP+'%*'+(pctCobWPP>=100?' ✅':'')+'\n';
 
       if (pendentes.length) {
         msg += '\n🔴 *PENDENTES EM ABERTO*\n';
