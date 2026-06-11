@@ -1045,10 +1045,71 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   }
 
   function renderHistorico() {
-    var lista = filtroAtivo === 'todos' ? lancamentos : lancamentos.filter(function(l){ return l.tipo === filtroAtivo; });
+    var MEMBROS_FIXOS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
     var el = document.getElementById('lista-historico');
-    if (!lista.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📂</div><div class="empty-text">Nenhum lançamento encontrado</div></div>'; return; }
-    el.innerHTML = lista.map(itemHTML).join('');
+
+    // ── Visão panorâmica de meses ────────────────────────────
+    var meses = {};
+    lancamentos.forEach(function(l) {
+      var ref = (l.tipo==='entrada' && l.competencia) ? l.competencia : (l.data ? l.data.slice(0,7) : null);
+      if (!ref) return;
+      if (!meses[ref]) meses[ref] = { e:0, g:0, pagantes:{} };
+      if (l.tipo==='entrada') {
+        meses[ref].e += l.valor;
+        if (l.membro && l.subTipo !== 'extra') meses[ref].pagantes[l.membro] = true;
+      }
+      if (l.tipo==='gasto' && l.status !== 'pendente') meses[ref].g += l.valor;
+    });
+
+    var mesesOrdenados = Object.keys(meses).sort().reverse();
+    var panoramaHTML = '';
+    if (mesesOrdenados.length) {
+      panoramaHTML = '<div style="margin-bottom:14px;">'
+        + '<div style="font-family:\'Cinzel\',serif;font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Extrato Mensal</div>'
+        + mesesOrdenados.map(function(mes) {
+            var d = meses[mes];
+            var saldo = d.e - d.g;
+            var pctValor = d.g > 0 ? Math.round(d.e / d.g * 100) : (d.e > 0 ? 100 : 0);
+            var nPag = Object.keys(d.pagantes).length;
+            var pctPag = Math.round(nPag / MEMBROS_FIXOS.length * 100);
+            var p = mes.split('-');
+            var label = MESES_NOMES_FULL[parseInt(p[1])-1] + '/' + p[0].slice(2);
+            return '<div style="background:var(--surface);border-radius:10px;padding:11px 14px;margin-bottom:7px;box-shadow:0 2px 10px rgba(180,60,90,.06);">'
+              + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">'
+              + '<span style="font-family:\'Cinzel\',serif;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text);">'+label+'</span>'
+              + '<span style="font-family:\'Crimson Pro\',serif;font-size:1rem;font-weight:600;color:'+(saldo>=0?'var(--green)':'var(--red)')+'">'+fmt(saldo)+'</span>'
+              + '</div>'
+              + '<div style="display:flex;gap:10px;margin-bottom:7px;">'
+              + '<div style="flex:1;background:var(--green-dim);border-radius:6px;padding:5px 8px;">'
+              +   '<div style="font-family:\'DM Sans\',sans-serif;font-size:.65rem;color:var(--green);">↑ Entradas</div>'
+              +   '<div style="font-family:\'Crimson Pro\',serif;font-size:.9rem;font-weight:600;color:var(--green);">'+fmt(d.e)+'</div>'
+              + '</div>'
+              + '<div style="flex:1;background:var(--red-dim);border-radius:6px;padding:5px 8px;">'
+              +   '<div style="font-family:\'DM Sans\',sans-serif;font-size:.65rem;color:var(--red);">↓ Gastos</div>'
+              +   '<div style="font-family:\'Crimson Pro\',serif;font-size:.9rem;font-weight:600;color:var(--red);">'+fmt(d.g)+'</div>'
+              + '</div>'
+              + '</div>'
+              + '<div style="display:flex;gap:8px;align-items:center;">'
+              + '<div style="flex:1;background:rgba(196,57,107,.06);border-radius:4px;height:5px;overflow:hidden;">'
+              +   '<div style="height:100%;border-radius:4px;transition:width .3s;width:'+Math.min(pctValor,100)+'%;background:'+(pctValor>=100?'var(--green)':'var(--gold)')+'"></div>'
+              + '</div>'
+              + '<span style="font-family:\'DM Sans\',sans-serif;font-size:.68rem;color:var(--text-dim);white-space:nowrap;">'+pctValor+'% coberto</span>'
+              + '<span style="font-family:\'DM Sans\',sans-serif;font-size:.68rem;color:var(--text-dim);white-space:nowrap;">'+nPag+'/'+MEMBROS_FIXOS.length+' ('+pctPag+'%)</span>'
+              + '</div>'
+              + '</div>';
+          }).join('')
+        + '</div>';
+    }
+
+    // ── Lista de lançamentos ─────────────────────────────────
+    var lista = filtroAtivo === 'todos' ? lancamentos : lancamentos.filter(function(l){ return l.tipo === filtroAtivo; });
+    var listaHTML = lista.length
+      ? lista.map(itemHTML).join('')
+      : '<div class="empty"><div class="empty-icon">📂</div><div class="empty-text">Nenhum lançamento encontrado</div></div>';
+
+    el.innerHTML = panoramaHTML
+      + '<div style="font-family:\'Cinzel\',serif;font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Lançamentos</div>'
+      + listaHTML;
   }
 
   function setFiltro(f, btn) {
@@ -1059,14 +1120,78 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
   }
 
   function renderResumo() {
-    var membros = {};
-    lancamentos.filter(function(l){ return l.tipo === 'entrada'; }).forEach(function(l){ membros[l.membro] = (membros[l.membro] || 0) + l.valor; });
-    var elM = document.getElementById('resumo-membros');
-    var sortedM = Object.entries(membros).sort(function(a,b){ return b[1]-a[1]; });
-    elM.innerHTML = '<div class="rt-header"><div class="rt-header-text">Entradas por Membro</div></div>';
-    if (!sortedM.length) { elM.innerHTML += '<div class="rt-row"><div class="rt-nome" style="font-style:italic;color:var(--text-dim)">Nenhuma entrada</div></div>'; }
-    else sortedM.forEach(function(e){ elM.innerHTML += '<div class="rt-row"><div class="rt-nome">' + e[0] + '</div><div class="rt-val">' + fmt(e[1]) + '</div></div>'; });
+    var MEMBROS_FIXOS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
 
+    // ── Tabela mensalidade membro × mês ──────────────────────
+    var mesesSet = {};
+    lancamentos.filter(function(l){ return l.tipo==='entrada' && l.subTipo!=='extra'; }).forEach(function(l){
+      var ref = l.competencia || (l.data ? l.data.slice(0,7) : null);
+      if (ref) mesesSet[ref] = true;
+    });
+    var meses = Object.keys(mesesSet).sort();
+    var elM = document.getElementById('resumo-membros');
+
+    if (!meses.length) {
+      elM.innerHTML = '<div class="rt-header"><div class="rt-header-text">Mensalidade por Membro</div></div>'
+        + '<div class="rt-row"><div class="rt-nome" style="font-style:italic;color:var(--text-dim)">Nenhuma entrada registrada</div></div>';
+    } else {
+      // Monta mapa membro → mês → valor
+      var mapa = {};
+      MEMBROS_FIXOS.forEach(function(m){ mapa[m] = {}; });
+      lancamentos.filter(function(l){ return l.tipo==='entrada' && l.subTipo!=='extra'; }).forEach(function(l){
+        var ref = l.competencia || (l.data ? l.data.slice(0,7) : null);
+        if (!ref || !mapa[l.membro]) return;
+        mapa[l.membro][ref] = (mapa[l.membro][ref]||0) + l.valor;
+      });
+
+      var mesLabels = meses.map(function(m){
+        var p = m.split('-');
+        return MESES_NOMES_FULL[parseInt(p[1])-1].slice(0,3)+'/'+p[0].slice(2);
+      });
+
+      var html = '<div class="rt-header"><div class="rt-header-text">Mensalidade por Membro</div></div>';
+      html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-family:\'DM Sans\',sans-serif;font-size:.75rem;">';
+      // Header
+      html += '<tr style="background:rgba(196,57,107,.05);">'
+        + '<th style="text-align:left;padding:7px 10px;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);white-space:nowrap;">Membro</th>'
+        + mesLabels.map(function(l){ return '<th style="text-align:right;padding:7px 8px;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);white-space:nowrap;">'+l+'</th>'; }).join('')
+        + '<th style="text-align:right;padding:7px 10px;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);">Total</th>'
+        + '<th style="text-align:right;padding:7px 10px;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);">Média</th>'
+        + '<th style="text-align:right;padding:7px 10px;font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);">Freq.</th>'
+        + '</tr>';
+
+      MEMBROS_FIXOS.forEach(function(m, ri) {
+        var total = 0, freq = 0;
+        var cells = meses.map(function(mes){
+          var v = mapa[m][mes] || 0;
+          if (v > 0) { total += v; freq++; }
+          return '<td style="text-align:right;padding:6px 8px;color:'+(v>0?'var(--green)':'rgba(80,30,50,.25)')+';font-family:\'Crimson Pro\',serif;font-weight:'+(v>0?'600':'400')+';">'+(v>0?'R$'+v.toFixed(0):'—')+'</td>';
+        }).join('');
+        var media = freq > 0 ? (total/freq) : 0;
+        html += '<tr style="border-bottom:1px solid var(--border);background:'+(ri%2===0?'transparent':'rgba(196,57,107,.02)')+';">'
+          + '<td style="padding:6px 10px;font-weight:500;color:var(--text);white-space:nowrap;">'+m+'</td>'
+          + cells
+          + '<td style="text-align:right;padding:6px 10px;font-family:\'Crimson Pro\',serif;font-weight:700;color:var(--green);">'+(total>0?fmt(total):'—')+'</td>'
+          + '<td style="text-align:right;padding:6px 10px;font-family:\'Crimson Pro\',serif;color:var(--text-dim);">'+(media>0?'R$'+media.toFixed(0):'—')+'</td>'
+          + '<td style="text-align:right;padding:6px 10px;color:var(--text-dim);">'+freq+'/'+meses.length+'</td>'
+          + '</tr>';
+      });
+
+      // Totais por mês
+      html += '<tr style="background:rgba(196,57,107,.06);font-weight:700;">'
+        + '<td style="padding:7px 10px;font-family:\'Cinzel\',serif;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);">Total</td>'
+        + meses.map(function(mes){
+            var t = MEMBROS_FIXOS.reduce(function(s,m){ return s+(mapa[m][mes]||0); },0);
+            return '<td style="text-align:right;padding:7px 8px;font-family:\'Crimson Pro\',serif;font-weight:700;color:var(--green);">'+(t>0?fmt(t):'—')+'</td>';
+          }).join('')
+        + '<td colspan="3"></td>'
+        + '</tr>';
+
+      html += '</table></div>';
+      elM.innerHTML = html;
+    }
+
+    // ── Gastos por conta (mantém) ─────────────────────────────
     var contas = {};
     lancamentos.filter(function(l){ return l.tipo === 'gasto'; }).forEach(function(l){ contas[l.conta] = (contas[l.conta] || 0) + l.valor; });
     var elC = document.getElementById('resumo-contas');
@@ -1888,6 +2013,19 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     <div class="ag-saldo-card s"><div class="ag-lbl">Saídas</div><div class="ag-val" id="ag-totalS">R$0</div></div>
     <div class="ag-saldo-card b"><div class="ag-lbl">Saldo</div><div class="ag-val" id="ag-saldo">R$0</div></div>
   </div>
+  <!-- Metas -->
+  <div style="margin:8px 12px 0;display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+    <div style="background:#fffbe8;border:1px solid #e8d080;border-radius:9px;padding:8px 11px;">
+      <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#8c5a00;">⭐ Meta Mínima</div>
+      <div id="ag-meta-prio" style="font-family:'Crimson Pro',serif;font-size:1.1rem;font-weight:600;color:#8c5a00;">R$0</div>
+      <div id="ag-meta-prio-pct" style="font-family:'DM Sans',sans-serif;font-size:.68rem;color:#c88c00;margin-top:1px;"></div>
+    </div>
+    <div style="background:rgba(196,57,107,.05);border:1px solid rgba(196,57,107,.15);border-radius:9px;padding:8px 11px;">
+      <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);">📋 Meta Total</div>
+      <div id="ag-meta-total" style="font-family:'Crimson Pro',serif;font-size:1.1rem;font-weight:600;color:var(--text);">R$0</div>
+      <div id="ag-meta-total-pct" style="font-family:'DM Sans',sans-serif;font-size:.68rem;color:var(--text-dim);margin-top:1px;"></div>
+    </div>
+  </div>
 
   <!-- Tabs -->
   <div class="ag-tabs">
@@ -2063,10 +2201,14 @@ var AG_PRECO_GALO = 58, AG_PRECO_GALINHA = 53, AG_OBRIGACAO = 270;
 
 var agPessoas = [
   {nome:'Ness',galos:0,galinhas:0},{nome:'Thali',galos:0,galinhas:0},
-  {nome:'Jaque',galos:2,galinhas:3},{nome:'Tassi',galos:1,galinhas:1},{nome:'Brenda',galos:1,galinhas:1},
-  {nome:'Anne',galos:0,galinhas:0},{nome:'Vitória',galos:1,galinhas:1},{nome:'Manu',galos:1,galinhas:1},
-  {nome:'Juliana',galos:1,galinhas:1},{nome:'Gabi',galos:0,galinhas:1},{nome:'Márcia',galos:0,galinhas:0},
-  {nome:'Nicole',galos:0,galinhas:0},{nome:'Stephani',galos:0,galinhas:0}
+  {nome:'Jaque',galos:2,galinhas:3,coresGalos:['',''],coresGalinhas:['','','']},
+  {nome:'Tassi',galos:1,galinhas:1,coresGalos:[''],coresGalinhas:['']},
+  {nome:'Brenda',galos:1,galinhas:1,coresGalos:[''],coresGalinhas:['']},
+  {nome:'Anne',galos:0,galinhas:0},{nome:'Vitória',galos:1,galinhas:1,coresGalos:[''],coresGalinhas:['']},
+  {nome:'Manu',galos:1,galinhas:1,coresGalos:[''],coresGalinhas:['']},
+  {nome:'Juliana',galos:1,galinhas:1,coresGalos:[''],coresGalinhas:['']},
+  {nome:'Gabi',galos:0,galinhas:1,coresGalinhas:['']},
+  {nome:'Márcia',galos:0,galinhas:0},{nome:'Nicole',galos:0,galinhas:0},{nome:'Stephani',galos:0,galinhas:0}
 ];
 
 var agPgtos    = {};
@@ -2102,7 +2244,12 @@ function agCarregarDados(cb) {
     agPgtos  = res[0] || {};
     agGastos = Array.isArray(res[1]) ? res[1] : [];
     agCats   = res[2] || agCats;
-    agPessoas.forEach(function(p){ if(!agPgtos[p.nome]) agPgtos[p.nome]={obr:0,aves:0}; });
+    agPessoas.forEach(function(p, pi){ 
+      if(!agPgtos[p.nome]) agPgtos[p.nome]={obr:0,aves:0};
+      // Restaura cores das aves se salvas
+      if (agPgtos[p.nome]['cores_galos_'+pi]) p.coresGalos = agPgtos[p.nome]['cores_galos_'+pi];
+      if (agPgtos[p.nome]['cores_galinhas_'+pi]) p.coresGalinhas = agPgtos[p.nome]['cores_galinhas_'+pi];
+    });
     if (cb) cb();
   });
 }
@@ -2121,6 +2268,34 @@ function agAtualizarSaldo() {
   var el=document.getElementById('ag-saldo');
   el.textContent=agFmtS(sal);
   el.style.color=sal>=0?'#2a7a60':'#b84040';
+
+  // Metas
+  var metaPrio=0, metaTot=0;
+  agCats.forEach(function(cat){
+    var allItens = cat.itens.slice();
+    (cat.subcats||[]).forEach(function(sc){ allItens = allItens.concat(sc.itens); });
+    allItens.forEach(function(item){
+      var v = agItemTotal(item);
+      metaTot += v;
+      if (item.prio) metaPrio += v;
+    });
+  });
+  var pctPrio = metaPrio>0 ? Math.round(e/metaPrio*100) : 0;
+  var pctTot  = metaTot>0  ? Math.round(e/metaTot*100)  : 0;
+  document.getElementById('ag-meta-prio').textContent = agFmtS(metaPrio);
+  document.getElementById('ag-meta-prio-pct').textContent = pctPrio+'% arrecadado'+(e>=metaPrio&&metaPrio>0?' ✅':'');
+  document.getElementById('ag-meta-total').textContent = agFmtS(metaTot);
+  document.getElementById('ag-meta-total-pct').textContent = pctTot+'% arrecadado'+(e>=metaTot&&metaTot>0?' ✅':'');
+}
+
+function agTogglePrio(ci, si, ii) {
+  var item = agGetItens(ci, si)[ii];
+  item.prio = !item.prio;
+  agSalvar(); agAtualizarSaldo(); agRenderOrc();
+  setTimeout(function(){
+    document.getElementById('ag-cat-'+ci).classList.add('open');
+    if (si !== null && si !== 'null') { var el=document.getElementById('ag-subcat-'+ci+'-'+si); if(el) el.classList.add('open'); }
+  },10);
 }
 
 // ── PESSOAS ──────────────────────────────────────────────────
@@ -2310,6 +2485,7 @@ function agItemRowHTML(item, ci, si, ii) {
   }).join('');
   var siStr = si !== null ? si : 'null';
   var linkBtn = item.link ? '<a href="'+item.link+'" target="_blank" style="text-decoration:none;font-size:.9rem;" title="Abrir link">🛒</a>' : '';
+  var prioBtn = '<button onclick="agTogglePrio('+ci+','+siStr+','+ii+')" title="'+(item.prio?'Prioritário':'Marcar como prioritário')+'" style="background:none;border:none;cursor:pointer;font-size:.85rem;opacity:'+(item.prio?'1':'.3')+'" >⭐</button>';
   return '<div class="ag-item-row'+(item.pago?' ag-item-pago':'')+'" style="flex-wrap:wrap;gap:4px;">'
     + '<div style="display:flex;align-items:center;gap:5px;width:100%;">'
     + '<input type="checkbox" class="ag-item-chk"'+(item.pago?' checked':'')+' onchange="agTogglePago('+ci+','+siStr+','+ii+',this.checked)">'
@@ -2317,6 +2493,7 @@ function agItemRowHTML(item, ci, si, ii) {
     + (item.pago?'<span style="font-size:.62rem;background:#e8f4f0;color:#2a7a60;border-radius:10px;padding:1px 5px;margin-left:4px">→ Gastos</span>':'')
     + '</span>'
     + linkBtn
+    + prioBtn
     + '<button class="ag-item-del" onclick="agClonarItem('+ci+','+siStr+','+ii+')" title="Clonar">⧉</button>'
     + '<button class="ag-item-del" onclick="agAbrirEditItem('+ci+','+siStr+','+ii+')" style="color:rgba(80,30,50,.4);">✏️</button>'
     + '<button class="ag-item-del" onclick="agDelItem('+ci+','+siStr+','+ii+')">🗑</button>'
@@ -2662,12 +2839,41 @@ function agSalvarEditItem() {
 function agRenderAves(){
   var body=document.getElementById('ag-aves-body'); body.innerHTML='';
   var tG=0,tH=0;
-  agPessoas.forEach(function(p){
+  agPessoas.forEach(function(p,pi){
     if(!p.galos&&!p.galinhas) return;
     tG+=p.galos; tH+=p.galinhas;
-    var val=agAvesVal(p), row=document.createElement('div');
-    row.className='ag-aves-row';
-    row.innerHTML='<span>'+p.nome+'</span><span style="font-size:.75rem;color:rgba(80,30,50,.5)">'+(p.galos?p.galos+'🐓 ':'')+( p.galinhas?p.galinhas+'🐔':'')+'</span><span class="ag-aves-val">'+agFmt(val)+'</span>';
+    var pg = agPgtos[p.nome];
+    var tAves = agAvesVal(p);
+    var quitou = pg && pg.aves >= tAves && tAves > 0;
+
+    // Monta detalhes de aves com cor
+    var avesDetalhe = '';
+    for (var g=0; g<p.galos; g++) {
+      var cor = (p.coresGalos && p.coresGalos[g]) || '';
+      avesDetalhe += '<span style="display:inline-flex;align-items:center;gap:3px;margin-right:5px;">'
+        + '🐓 <input type="text" value="'+cor+'" placeholder="cor…" maxlength="15"'
+        + ' onchange="agSetCorAve('+pi+',\'galos\','+g+',this.value)"'
+        + ' style="width:60px;background:transparent;border:none;border-bottom:1px solid rgba(196,57,107,.2);font-family:\'DM Sans\',sans-serif;font-size:.72rem;color:rgba(80,30,50,.7);padding:1px 3px;outline:none;">'
+        + '</span>';
+    }
+    for (var h=0; h<p.galinhas; h++) {
+      var corH = (p.coresGalinhas && p.coresGalinhas[h]) || '';
+      avesDetalhe += '<span style="display:inline-flex;align-items:center;gap:3px;margin-right:5px;">'
+        + '🐔 <input type="text" value="'+corH+'" placeholder="cor…" maxlength="15"'
+        + ' onchange="agSetCorAve('+pi+',\'galinhas\','+h+',this.value)"'
+        + ' style="width:60px;background:transparent;border:none;border-bottom:1px solid rgba(196,57,107,.2);font-family:\'DM Sans\',sans-serif;font-size:.72rem;color:rgba(80,30,50,.7);padding:1px 3px;outline:none;">'
+        + '</span>';
+    }
+
+    var row = document.createElement('div');
+    row.className = 'ag-aves-row';
+    row.style.cssText = 'flex-wrap:wrap;gap:4px;padding:8px 0;align-items:flex-start;'+(quitou?'background:rgba(42,122,96,.05);border-radius:7px;padding:8px;':'');
+    row.innerHTML = '<div style="display:flex;align-items:center;gap:7px;width:100%;">'
+      + '<span style="font-weight:600;">' + p.nome + '</span>'
+      + (quitou ? '<span style="font-size:.75rem;background:#e8f4f0;color:#2a7a60;border-radius:10px;padding:1px 7px;font-family:\'Cinzel\',serif;font-size:.6rem;letter-spacing:.04em;">✅ PAGO</span>' : '')
+      + '<span class="ag-aves-val" style="margin-left:auto;">'+agFmt(tAves)+'</span>'
+      + '</div>'
+      + '<div style="width:100%;padding-left:4px;flex-wrap:wrap;display:flex;gap:2px;">' + avesDetalhe + '</div>';
     body.appendChild(row);
   });
   var tv=tG*AG_PRECO_GALO+tH*AG_PRECO_GALINHA;
@@ -2675,6 +2881,22 @@ function agRenderAves(){
   document.getElementById('ag-aves-totais').innerHTML='<div class="ag-aves-row"><span>Total galos</span><span style="color:rgba(80,30,50,.5);font-size:.76rem">'+tG+' × R$'+AG_PRECO_GALO+'</span><span class="ag-aves-val">'+agFmt(tG*AG_PRECO_GALO)+'</span></div>'
     +'<div class="ag-aves-row"><span>Total galinhas</span><span style="color:rgba(80,30,50,.5);font-size:.76rem">'+tH+' × R$'+AG_PRECO_GALINHA+'</span><span class="ag-aves-val">'+agFmt(tH*AG_PRECO_GALINHA)+'</span></div>'
     +'<div class="ag-aves-row" style="font-weight:700"><span>TOTAL AVES</span><span></span><span class="ag-aves-val">'+agFmt(tv)+'</span></div>';
+}
+
+function agSetCorAve(pi, tipo, idx, val) {
+  var p = agPessoas[pi];
+  if (tipo === 'galos') {
+    if (!p.coresGalos) p.coresGalos = [];
+    p.coresGalos[idx] = val;
+  } else {
+    if (!p.coresGalinhas) p.coresGalinhas = [];
+    p.coresGalinhas[idx] = val;
+  }
+  // Salva cores junto com pgtos para persistir
+  if (!agPgtos[p.nome]) agPgtos[p.nome] = {obr:0,aves:0};
+  agPgtos[p.nome]['cores_galos_'+pi] = p.coresGalos;
+  agPgtos[p.nome]['cores_galinhas_'+pi] = p.coresGalinhas;
+  agSalvar();
 }
 
 // ── EXPORTAR AGOSTO ──────────────────────────────────────────
