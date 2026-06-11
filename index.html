@@ -247,6 +247,22 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
         <div class="saldo-mini"><div class="saldo-mini-label">↑ Entradas</div><div class="saldo-mini-val" id="total-entradas-display">R$ 0,00</div></div>
         <div class="saldo-mini"><div class="saldo-mini-label">↓ Gastos</div><div class="saldo-mini-val" id="total-gastos-display">R$ 0,00</div></div>
       </div>
+      <!-- Stats mensalidade -->
+      <div id="stats-mensalidade" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.15);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <div style="font-family:'DM Sans',sans-serif;font-size:.7rem;color:rgba(255,255,255,.65);">
+            Mensalidade: <span id="stat-pgtos" style="color:#fff;font-weight:600;font-family:'Crimson Pro',serif;font-size:.9rem;"></span>
+            <span id="stat-pct-pessoas" style="color:rgba(255,255,255,.55);font-size:.68rem;margin-left:3px;"></span>
+          </div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:.7rem;color:rgba(255,255,255,.65);">
+            Entradas/Gastos: <span id="stat-pct-valor" style="color:#fff;font-weight:600;font-family:'Crimson Pro',serif;font-size:.9rem;"></span>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.2);border-radius:4px;height:3px;overflow:hidden;">
+          <div id="stat-bar-pessoas" style="height:100%;border-radius:4px;transition:width .4s;width:0%;background:rgba(255,255,255,.8);"></div>
+        </div>
+        <div id="stat-nao-pagaram" style="margin-top:6px;font-family:'DM Sans',sans-serif;font-size:.68rem;color:rgba(255,255,255,.5);"></div>
+      </div>
     </div>
     <div id="saldo-nota-mae" style="display:none;text-align:right;margin-top:-8px;margin-bottom:6px;padding-right:4px;font-family:'Crimson Pro',serif;font-style:italic;font-size:.78rem;color:var(--text-dim);">coberto pela mãe de santo 🕯️</div>
 
@@ -989,7 +1005,30 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     } else {
       notaEl.style.display = 'none';
     }
-    document.getElementById('lancamentos-label').textContent = filtroMesAtivo ? 'Lançamentos do mês' : 'Últimos lançamentos';
+    // Stats mensalidade — só mostra quando há filtro de mês ativo
+    var MEMBROS_FIXOS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
+    var statsEl = document.getElementById('stats-mensalidade');
+    if (filtroMesAtivo) {
+      var entradasMembros = lista.filter(function(l){ return l.tipo==='entrada' && l.subTipo !== 'extra'; });
+      var pagaram = {};
+      entradasMembros.forEach(function(l){ if (l.membro) pagaram[l.membro] = true; });
+      var nPagaram = Object.keys(pagaram).length;
+      var nTotal = MEMBROS_FIXOS.length;
+      var pctPessoas = Math.round(nPagaram / nTotal * 100);
+      var naoPagaram = MEMBROS_FIXOS.filter(function(m){ return !pagaram[m]; });
+      var pctValor = totalG > 0 ? Math.round(totalE / totalG * 100) : (totalE > 0 ? 100 : 0);
+
+      document.getElementById('stat-pgtos').textContent = nPagaram + '/' + nTotal;
+      document.getElementById('stat-pct-pessoas').textContent = '(' + pctPessoas + '%)';
+      document.getElementById('stat-pct-valor').textContent = pctValor + '%';
+      document.getElementById('stat-bar-pessoas').style.width = pctPessoas + '%';
+      document.getElementById('stat-nao-pagaram').textContent = naoPagaram.length
+        ? 'Faltam: ' + naoPagaram.join(', ')
+        : '✓ Todos pagaram!';
+      statsEl.style.display = 'block';
+    } else {
+      statsEl.style.display = 'none';
+    }
     // Aplica filtro de tipo
     var listaTipo = lista;
     if (inicioFiltro === 'entrada') listaTipo = lista.filter(function(l){ return l.tipo === 'entrada'; });
@@ -1929,7 +1968,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
         <div class="ag-form-row"><label>Responsável</label>
           <select id="ag-ei-resp" style="width:100%;background:transparent;border:1px solid rgba(196,57,107,.15);border-radius:6px;color:#2a1a22;font-family:'Crimson Pro',serif;font-size:16px;padding:8px 11px;-webkit-appearance:none;">
             <option value="">— Nenhum —</option>
-            <option>Anna</option><option>Ness</option><option>Thali</option><option>Jaque</option><option>Tassi</option>
+            <option>Ness</option><option>Thali</option><option>Jaque</option><option>Tassi</option>
             <option>Brenda</option><option>Anne</option><option>Vitória</option><option>Manu</option>
             <option>Juliana</option><option>Gabi</option><option>Márcia</option><option>Nicole</option><option>Stephani</option>
           </select>
@@ -2023,7 +2062,7 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
 var AG_PRECO_GALO = 58, AG_PRECO_GALINHA = 53, AG_OBRIGACAO = 270;
 
 var agPessoas = [
-  {nome:'Anna',galos:3,galinhas:0},{nome:'Ness',galos:0,galinhas:0},{nome:'Thali',galos:0,galinhas:0},
+  {nome:'Ness',galos:0,galinhas:0},{nome:'Thali',galos:0,galinhas:0},
   {nome:'Jaque',galos:2,galinhas:3},{nome:'Tassi',galos:1,galinhas:1},{nome:'Brenda',galos:1,galinhas:1},
   {nome:'Anne',galos:0,galinhas:0},{nome:'Vitória',galos:1,galinhas:1},{nome:'Manu',galos:1,galinhas:1},
   {nome:'Juliana',galos:1,galinhas:1},{nome:'Gabi',galos:0,galinhas:1},{nome:'Márcia',galos:0,galinhas:0},
@@ -2173,7 +2212,7 @@ function agRenderGastos() {
 }
 
 // ── ORÇAMENTO ────────────────────────────────────────────────
-var AG_RESPONSAVEIS = ['Anna','Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
+var AG_RESPONSAVEIS = ['Ness','Thali','Jaque','Tassi','Brenda','Anne','Vitória','Manu','Juliana','Gabi','Márcia','Nicole','Stephani'];
 
 function agItemTotal(item) {
   var qtd = parseFloat(item.qtd) || 1;
