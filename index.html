@@ -2832,14 +2832,15 @@ function agAtualizarSaldo() {
   document.getElementById('ag-meta-prio-pct').textContent = metaPrio>0 ? (agFmtS(e)+' / '+agFmtS(metaPrio)+' · '+pctPrio+'%'+(e>=metaPrio?' ✅':'')) : 'defina a meta';
   document.getElementById('ag-meta-total-pct').textContent = metaTot>0 ? (agFmtS(e)+' / '+agFmtS(metaTot)+' · '+pctTot+'%'+(e>=metaTot?' ✅':'')) : 'defina a meta';
 
-  // Barra de progresso geral: total esperado (obrigação + aves de todos), pago e gasto
-  var totalEsperado = agPessoas.reduce(function(sum,p){ return sum + AG_OBRIGACAO + agAvesVal(p); }, 0);
-  var pctPago  = totalEsperado>0 ? Math.round(e/totalEsperado*100) : 0;
+  // Barra de progresso geral: total esperado (só obrigação, sem aves), pago e gasto
+  var totalEsperado = agPessoas.length * AG_OBRIGACAO;
+  var pagoObr = agPessoas.reduce(function(sum,p){ var pg=agPgtos[p.nome]; return sum + (pg ? pg.obr : 0); }, 0);
+  var pctPago  = totalEsperado>0 ? Math.round(pagoObr/totalEsperado*100) : 0;
   var pctGasto = totalEsperado>0 ? Math.round(s/totalEsperado*100) : 0;
   document.getElementById('ag-progress-total').textContent = agFmt(totalEsperado);
   document.getElementById('ag-progress-fill').style.width = Math.min(pctPago,100)+'%';
   document.getElementById('ag-progress-marker').style.left = Math.min(pctGasto,100)+'%';
-  document.getElementById('ag-progress-pago-val').textContent = agFmt(e);
+  document.getElementById('ag-progress-pago-val').textContent = agFmt(pagoObr);
   document.getElementById('ag-progress-pago-pct').textContent = '('+pctPago+'%)';
   document.getElementById('ag-progress-gasto-val').textContent = agFmt(s);
   document.getElementById('ag-progress-gasto-pct').textContent = '('+pctGasto+'%)';
