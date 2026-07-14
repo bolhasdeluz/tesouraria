@@ -2425,7 +2425,10 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     .ag-dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
     .ag-dot-pago { background:#2a7a60; }
     .ag-dot-gasto { background:#b84040; }
+    .ag-dot-aves { background:#c88c00; }
     .ag-progress-overflow { margin-top:6px; font-family:'DM Sans',sans-serif; font-size:.7rem; color:#b84040; font-weight:600; }
+    .ag-progress-divider { height:1px; background:rgba(196,57,107,.12); margin:14px 0 10px; }
+    .ag-progress-fill-aves { background:linear-gradient(90deg,#c88c00,#e8b84d); }
     .ag-tabs { display:flex; gap:5px; padding:12px 12px 0; overflow-x:auto; scrollbar-width:none; }
     .ag-tabs::-webkit-scrollbar { display:none; }
     .ag-tab { font-family:'Cinzel',serif; font-size:9.5px; letter-spacing:.07em; font-weight:600; padding:6px 13px; border-radius:20px; border:1px solid rgba(196,57,107,.15); background:#fff; color:rgba(80,30,50,.5); cursor:pointer; white-space:nowrap; transition:all .2s; }
@@ -2545,6 +2548,19 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
       <span class="ag-progress-leg-item"><span class="ag-dot ag-dot-gasto"></span>Gasto <b id="ag-progress-gasto-val">R$ 0,00</b> <span id="ag-progress-gasto-pct">(0%)</span></span>
     </div>
     <div id="ag-progress-overflow" class="ag-progress-overflow" style="display:none;"></div>
+
+    <div class="ag-progress-divider"></div>
+
+    <div class="ag-progress-hdr">
+      <span class="ag-progress-lbl">🐓 Aves esperado</span>
+      <span class="ag-progress-total" id="ag-progress-aves-total">R$ 0,00</span>
+    </div>
+    <div class="ag-progress-track">
+      <div class="ag-progress-fill ag-progress-fill-aves" id="ag-progress-aves-fill" style="width:0%;"></div>
+    </div>
+    <div class="ag-progress-legend">
+      <span class="ag-progress-leg-item"><span class="ag-dot ag-dot-aves"></span>Arrecadado <b id="ag-progress-aves-val">R$ 0,00</b> <span id="ag-progress-aves-pct">(0%)</span></span>
+    </div>
   </div>
 
   <!-- Saldo -->
@@ -2851,6 +2867,15 @@ function agAtualizarSaldo() {
   } else {
     overflowEl.style.display = 'none';
   }
+
+  // Linha das aves: esperado (galos+galinhas comprometidos) e já arrecadado
+  var totalAvesEsperado = agPessoas.reduce(function(sum,p){ return sum + agAvesVal(p); }, 0);
+  var avesArrecadado = agPessoas.reduce(function(sum,p){ var pg=agPgtos[p.nome]; return sum + (pg ? pg.aves : 0); }, 0);
+  var pctAves = totalAvesEsperado>0 ? Math.round(avesArrecadado/totalAvesEsperado*100) : 0;
+  document.getElementById('ag-progress-aves-total').textContent = agFmt(totalAvesEsperado);
+  document.getElementById('ag-progress-aves-fill').style.width = Math.min(pctAves,100)+'%';
+  document.getElementById('ag-progress-aves-val').textContent = agFmt(avesArrecadado);
+  document.getElementById('ag-progress-aves-pct').textContent = '('+pctAves+'%)';
 }
 
 function agSetMeta(tipo, valor) {
