@@ -2412,6 +2412,20 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
     .ag-saldo-card .ag-lbl { font-family:'Cinzel',serif; font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:rgba(80,30,50,.5); }
     .ag-saldo-card .ag-val { font-family:'Crimson Pro',serif; font-size:1.1rem; font-weight:600; margin-top:2px; }
     .ag-saldo-card.e .ag-val { color:#2a7a60; } .ag-saldo-card.s .ag-val { color:#b84040; } .ag-saldo-card.b .ag-val { color:#c4396b; } .ag-saldo-card.b { border-color:rgba(196,57,107,.3); background:rgba(196,57,107,.05); }
+    /* Barra de progresso geral */
+    .ag-progress-wrap { margin:12px 12px 0; background:#fff; border:1px solid rgba(196,57,107,.15); border-radius:10px; padding:12px 14px; box-shadow:0 2px 10px rgba(180,60,90,.06); }
+    .ag-progress-hdr { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; gap:8px; }
+    .ag-progress-lbl { font-family:'Cinzel',serif; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:rgba(80,30,50,.55); }
+    .ag-progress-total { font-family:'Crimson Pro',serif; font-size:1.05rem; font-weight:600; color:#2a1a22; white-space:nowrap; }
+    .ag-progress-track { position:relative; height:12px; background:rgba(196,57,107,.08); border-radius:6px; }
+    .ag-progress-fill { position:absolute; inset:0 auto 0 0; height:100%; width:0%; background:linear-gradient(90deg,#2a7a60,#3a9a78); border-radius:6px; transition:width .4s; }
+    .ag-progress-marker { position:absolute; top:-3px; bottom:-3px; width:3px; background:#b84040; left:0%; border-radius:2px; transition:left .4s; box-shadow:0 0 0 2px #fff; }
+    .ag-progress-legend { display:flex; justify-content:space-between; margin-top:8px; font-family:'DM Sans',sans-serif; font-size:.72rem; color:rgba(80,30,50,.7); flex-wrap:wrap; gap:6px; }
+    .ag-progress-leg-item { display:flex; align-items:center; gap:5px; }
+    .ag-dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+    .ag-dot-pago { background:#2a7a60; }
+    .ag-dot-gasto { background:#b84040; }
+    .ag-progress-overflow { margin-top:6px; font-family:'DM Sans',sans-serif; font-size:.7rem; color:#b84040; font-weight:600; }
     .ag-tabs { display:flex; gap:5px; padding:12px 12px 0; overflow-x:auto; scrollbar-width:none; }
     .ag-tabs::-webkit-scrollbar { display:none; }
     .ag-tab { font-family:'Cinzel',serif; font-size:9.5px; letter-spacing:.07em; font-weight:600; padding:6px 13px; border-radius:20px; border:1px solid rgba(196,57,107,.15); background:#fff; color:rgba(80,30,50,.5); cursor:pointer; white-space:nowrap; transition:all .2s; }
@@ -2514,6 +2528,23 @@ body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-s
         <div onclick="agExportWpp()" style="display:flex;align-items:center;gap:9px;padding:12px 15px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.82rem;color:#2a1a22;">💬 <div><div style="font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;">WhatsApp</div><div style="font-size:.65rem;color:rgba(80,30,50,.5);margin-top:1px;">Resumo para copiar</div></div></div>
       </div>
     </div>
+  </div>
+
+  <!-- Barra de Progresso Geral -->
+  <div class="ag-progress-wrap">
+    <div class="ag-progress-hdr">
+      <span class="ag-progress-lbl">🎯 Total esperado (todos pagarem)</span>
+      <span class="ag-progress-total" id="ag-progress-total">R$ 0,00</span>
+    </div>
+    <div class="ag-progress-track">
+      <div class="ag-progress-fill" id="ag-progress-fill" style="width:0%;"></div>
+      <div class="ag-progress-marker" id="ag-progress-marker" style="left:0%;" title="Gasto"></div>
+    </div>
+    <div class="ag-progress-legend">
+      <span class="ag-progress-leg-item"><span class="ag-dot ag-dot-pago"></span>Pago <b id="ag-progress-pago-val">R$ 0,00</b> <span id="ag-progress-pago-pct">(0%)</span></span>
+      <span class="ag-progress-leg-item"><span class="ag-dot ag-dot-gasto"></span>Gasto <b id="ag-progress-gasto-val">R$ 0,00</b> <span id="ag-progress-gasto-pct">(0%)</span></span>
+    </div>
+    <div id="ag-progress-overflow" class="ag-progress-overflow" style="display:none;"></div>
   </div>
 
   <!-- Saldo -->
@@ -2800,6 +2831,25 @@ function agAtualizarSaldo() {
   if (inpT && document.activeElement !== inpT) inpT.value = metaTot || '';
   document.getElementById('ag-meta-prio-pct').textContent = metaPrio>0 ? (agFmtS(e)+' / '+agFmtS(metaPrio)+' · '+pctPrio+'%'+(e>=metaPrio?' ✅':'')) : 'defina a meta';
   document.getElementById('ag-meta-total-pct').textContent = metaTot>0 ? (agFmtS(e)+' / '+agFmtS(metaTot)+' · '+pctTot+'%'+(e>=metaTot?' ✅':'')) : 'defina a meta';
+
+  // Barra de progresso geral: total esperado (obrigação + aves de todos), pago e gasto
+  var totalEsperado = agPessoas.reduce(function(sum,p){ return sum + AG_OBRIGACAO + agAvesVal(p); }, 0);
+  var pctPago  = totalEsperado>0 ? Math.round(e/totalEsperado*100) : 0;
+  var pctGasto = totalEsperado>0 ? Math.round(s/totalEsperado*100) : 0;
+  document.getElementById('ag-progress-total').textContent = agFmt(totalEsperado);
+  document.getElementById('ag-progress-fill').style.width = Math.min(pctPago,100)+'%';
+  document.getElementById('ag-progress-marker').style.left = Math.min(pctGasto,100)+'%';
+  document.getElementById('ag-progress-pago-val').textContent = agFmt(e);
+  document.getElementById('ag-progress-pago-pct').textContent = '('+pctPago+'%)';
+  document.getElementById('ag-progress-gasto-val').textContent = agFmt(s);
+  document.getElementById('ag-progress-gasto-pct').textContent = '('+pctGasto+'%)';
+  var overflowEl = document.getElementById('ag-progress-overflow');
+  if (s > totalEsperado) {
+    overflowEl.style.display = 'block';
+    overflowEl.textContent = '⚠️ Gasto ultrapassou o total esperado em ' + agFmt(s-totalEsperado);
+  } else {
+    overflowEl.style.display = 'none';
+  }
 }
 
 function agSetMeta(tipo, valor) {
